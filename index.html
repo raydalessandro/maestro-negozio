@@ -73,15 +73,12 @@
     <script src="assets/js/supabase-storage.js"></script>
     <script>
         function goToManager() {
-            // Chiedi password
             const password = prompt('🔐 Inserisci password Manager:');
             
             if (password === 'oakself') {
-                // Password corretta - salva in sessionStorage
                 sessionStorage.setItem('managerAuth', 'true');
                 window.location.href = 'manager.html';
             } else if (password !== null) {
-                // Password sbagliata (null = annulla)
                 alert('❌ Password errata!');
             }
         }
@@ -90,12 +87,13 @@
             window.location.href = 'team.html';
         }
 
-       // Inizializza sincronizzazione Supabase
-if (window.supabaseSync && window.supabaseSync.init) {
-    window.supabaseSync.init().then(() => {
-        console.log('✅ Sincronizzazione Supabase inizializzata');
-    });
-}
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inizializza sincronizzazione Supabase
+            if (window.supabaseSync && window.supabaseSync.init) {
+                window.supabaseSync.init().then(() => {
+                    console.log('✅ Sincronizzazione Supabase inizializzata');
+                });
+            }
             
             if (!localStorage.getItem('storeData')) {
                 const initialData = {
@@ -104,6 +102,7 @@ if (window.supabaseSync && window.supabaseSync.init) {
                     'Riky': { points: 500, history: [] }
                 };
                 localStorage.setItem('storeData', JSON.stringify(initialData));
+            }
         });
     </script>
 </body>
