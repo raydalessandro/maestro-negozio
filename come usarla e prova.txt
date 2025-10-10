@@ -1,0 +1,306 @@
+📅 Workflow Mensile Consigliato🔄 Fine Mese (es. 31 Ottobre)Passo 1: Genera Report Mensile
+
+Manager → Tab Storico
+Click 📊 Report Mensile (PDF)
+Salva PDF: Report_Ottobre_2025.pdf
+Stampa e appendi in bacheca per il team
+Passo 2: Scarica Backup Dati
+
+Click 💾 Scarica Backup
+Salva JSON: Backup_Ottobre_2025.json
+Conserva in una cartella (es. Dropbox/Google Drive)
+Passo 3: Reset Mese
+
+Click 🔄 Reset Mese
+Conferma
+✅ Tutti tornano a 500 punti
+✅ Supabase aggiornato (solo mese corrente)
+
+TEST APP NEGOZIO
+
+In console--->
+
+// ========================================
+// DEMO DATA GENERATOR - MAESTRO DI NEGOZIO
+// ========================================
+// Copia e incolla questo codice nella Console del browser (F12)
+
+/**
+ * Genera dati demo realistici
+ */
+async function generateDemoData() {
+    console.log('🎲 Generazione dati demo...');
+    
+    const demoData = {
+        "Gemy": { points: 500, history: [] },
+        "Valeria": { points: 500, history: [] },
+        "Riky": { points: 500, history: [] }
+    };
+    
+    const today = new Date();
+    
+    // Task disponibili
+    const allTasks = [
+        'Controllo e invio report giornaliero',
+        'Verifica apertura/chiusura',
+        'Completamento corretto allestimenti vetrine',
+        'Gestione inventario/differenze inventariali',
+        'Chiusure fine mese',
+        'Gestione turnistica',
+        'Check Formazione',
+        'Gestione Mail ritardi/malattie/cambio turno',
+        'Gestione reclami',
+        'Call di formazione',
+        'Recensioni',
+        'Raggiungimento KPI giornaliero'
+    ];
+    
+    const taskPoints = {
+        'Controllo e invio report giornaliero': 40,
+        'Verifica apertura/chiusura': 40,
+        'Completamento corretto allestimenti vetrine': 70,
+        'Gestione inventario/differenze inventariali': 70,
+        'Chiusure fine mese': 70,
+        'Gestione turnistica': 70,
+        'Check Formazione': 70,
+        'Gestione Mail ritardi/malattie/cambio turno': 70,
+        'Gestione reclami': 70,
+        'Call di formazione': 70,
+        'Recensioni': 70,
+        'Raggiungimento KPI giornaliero': 10
+    };
+    
+    // Genera storico per ogni persona
+    ['Gemy', 'Valeria', 'Riky'].forEach((person, personIdx) => {
+        // Probabilità di errori (diverse per persona)
+        const errorProbabilities = [0.25, 0.15, 0.35]; // Gemy 25%, Valeria 15%, Riky 35%
+        const errorProb = errorProbabilities[personIdx];
+        
+        // Genera 25-35 giorni di storico
+        const daysOfHistory = 25 + Math.floor(Math.random() * 10);
+        
+        for (let i = daysOfHistory; i > 0; i--) {
+            const date = new Date(today);
+            date.setDate(date.getDate() - i);
+            const dateStr = date.toISOString().split('T')[0];
+            
+            // Probabilità di avere errori
+            if (Math.random() < errorProb) {
+                // Seleziona 1-3 task casuali
+                const numTasks = 1 + Math.floor(Math.random() * 3);
+                const selectedTasks = [];
+                let penalty = 0;
+                
+                // Scegli task random senza duplicati
+                const availableTasks = [...allTasks];
+                for (let t = 0; t < numTasks && availableTasks.length > 0; t++) {
+                    const idx = Math.floor(Math.random() * availableTasks.length);
+                    const task = availableTasks.splice(idx, 1)[0];
+                    selectedTasks.push(task);
+                    penalty += taskPoints[task];
+                }
+                
+                demoData[person].history.push({
+                    date: dateStr,
+                    penalty: penalty,
+                    incompleteTasks: selectedTasks
+                });
+            }
+        }
+        
+        // Calcola punti finali
+        demoData[person].points = 500 - 
+            demoData[person].history.reduce((sum, h) => sum + h.penalty, 0);
+    });
+    
+    // Mostra riepilogo
+    console.log('\n📊 RIEPILOGO DATI DEMO:\n');
+    ['Gemy', 'Valeria', 'Riky'].forEach(person => {
+        console.log(`${person}:`);
+        console.log(`  - Punti: ${demoData[person].points}`);
+        console.log(`  - Giorni con errori: ${demoData[person].history.length}`);
+        console.log(`  - Penalità totale: ${500 - demoData[person].points}`);
+    });
+    
+    // Conferma prima di salvare
+    console.log('\n⚠️ Salvando su Supabase...');
+    
+    // Salva su Supabase
+    const success = await saveData(demoData);
+    
+    if (success) {
+        console.log('\n✅ Dati demo generati e salvati su Supabase!');
+        console.log('🔄 Ricarica la pagina per vedere i dati.');
+        
+        // Offri di ricaricare
+        if (confirm('✅ Dati demo generati!\n\nVuoi ricaricare la pagina per vederli?')) {
+            location.reload();
+        }
+    } else {
+        console.error('\n❌ Errore salvataggio su Supabase');
+        console.log('💾 Salvato solo in localStorage');
+        
+        if (confirm('⚠️ Salvato solo in localStorage.\n\nVuoi ricaricare per vedere i dati?')) {
+            location.reload();
+        }
+    }
+}
+
+/**
+ * Reset a dati puliti
+ */
+async function resetToClean() {
+    console.log('🔄 Reset a dati puliti...');
+    
+    const cleanData = {
+        "Gemy": { points: 500, history: [] },
+        "Valeria": { points: 500, history: [] },
+        "Riky": { points: 500, history: [] }
+    };
+    
+    const success = await saveData(cleanData);
+    
+    if (success) {
+        console.log('✅ Dati resettati!');
+        if (confirm('✅ Reset completato!\n\nVuoi ricaricare la pagina?')) {
+            location.reload();
+        }
+    } else {
+        console.error('❌ Errore reset');
+    }
+}
+
+/**
+ * Genera dati per scenario specifico
+ */
+async function generateScenario(scenarioName) {
+    const scenarios = {
+        // Scenario 1: Tutti bravi
+        'excellent': {
+            'Gemy': { points: 480, errorDays: 2 },
+            'Valeria': { points: 490, errorDays: 1 },
+            'Riky': { points: 470, errorDays: 3 }
+        },
+        
+        // Scenario 2: Mix realistico
+        'realistic': {
+            'Gemy': { points: 360, errorDays: 8 },
+            'Valeria': { points: 420, errorDays: 5 },
+            'Riky': { points: 280, errorDays: 12 }
+        },
+        
+        // Scenario 3: Situazione critica
+        'critical': {
+            'Gemy': { points: 180, errorDays: 15 },
+            'Valeria': { points: 250, errorDays: 12 },
+            'Riky': { points: 120, errorDays: 18 }
+        }
+    };
+    
+    if (!scenarios[scenarioName]) {
+        console.error('❌ Scenario non trovato!');
+        console.log('Scenari disponibili: excellent, realistic, critical');
+        return;
+    }
+    
+    console.log(`🎬 Generazione scenario: ${scenarioName}...`);
+    
+    const scenario = scenarios[scenarioName];
+    const demoData = {};
+    const today = new Date();
+    
+    const allTasks = [
+        'Controllo e invio report giornaliero',
+        'Verifica apertura/chiusura',
+        'Gestione inventario/differenze inventariali',
+        'Chiusure fine mese',
+        'Gestione turnistica'
+    ];
+    
+    for (const [person, config] of Object.entries(scenario)) {
+        demoData[person] = { points: 500, history: [] };
+        
+        // Distribuisci errori su errorDays giorni
+        for (let i = 0; i < config.errorDays; i++) {
+            const date = new Date(today);
+            date.setDate(date.getDate() - (i * 2 + 1)); // Distribuisci nel tempo
+            const dateStr = date.toISOString().split('T')[0];
+            
+            // Seleziona 1-2 task
+            const numTasks = Math.random() > 0.5 ? 2 : 1;
+            const selectedTasks = [];
+            let penalty = 0;
+            
+            for (let t = 0; t < numTasks; t++) {
+                const task = allTasks[Math.floor(Math.random() * allTasks.length)];
+                if (!selectedTasks.includes(task)) {
+                    selectedTasks.push(task);
+                    penalty += 70;
+                }
+            }
+            
+            demoData[person].history.push({
+                date: dateStr,
+                penalty: penalty,
+                incompleteTasks: selectedTasks
+            });
+        }
+        
+        // Aggiusta punti per matchare lo scenario
+        const currentPenalty = demoData[person].history.reduce((sum, h) => sum + h.penalty, 0);
+        const targetPenalty = 500 - config.points;
+        
+        if (currentPenalty < targetPenalty) {
+            // Aggiungi penalità
+            demoData[person].history[0].penalty += (targetPenalty - currentPenalty);
+        }
+        
+        demoData[person].points = config.points;
+    }
+    
+    console.log('\n📊 Scenario generato:');
+    Object.entries(demoData).forEach(([person, data]) => {
+        console.log(`${person}: ${data.points} punti, ${data.history.length} giorni con errori`);
+    });
+    
+    const success = await saveData(demoData);
+    
+    if (success) {
+        console.log('\n✅ Scenario salvato!');
+        if (confirm(`✅ Scenario "${scenarioName}" generato!\n\nRicaricare?`)) {
+            location.reload();
+        }
+    }
+}
+
+// ========================================
+// ISTRUZIONI
+// ========================================
+
+console.log(`
+╔════════════════════════════════════════╗
+║   🎲 GENERATORE DATI DEMO              ║
+╚════════════════════════════════════════╝
+
+Comandi disponibili:
+
+1️⃣  generateDemoData()
+   → Genera 25-35 giorni di dati casuali realistici
+
+2️⃣  resetToClean()
+   → Reset a 500 punti per tutti
+
+3️⃣  generateScenario('excellent')
+   → Tutti bravi (460-490 punti)
+
+4️⃣  generateScenario('realistic')
+   → Mix realistico (280-420 punti)
+
+5️⃣  generateScenario('critical')
+   → Situazione critica (120-250 punti)
+
+Esempio:
+  generateDemoData()
+  
+Poi ricarica la pagina per vedere i dati!
+`);
