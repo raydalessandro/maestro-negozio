@@ -90,14 +90,12 @@
             window.location.href = 'team.html';
         }
 
-        // Inizializza dati quando il DOM è pronto
-        document.addEventListener('DOMContentLoaded', function() {
-            // Inizializza sincronizzazione GitHub (se configurata)
-            if (window.githubSync) {
-                window.githubSync.init().then(() => {
-                    console.log('✅ Sincronizzazione GitHub inizializzata');
-                });
-            }
+       // Inizializza sincronizzazione Supabase
+if (window.supabaseSync && window.supabaseSync.init) {
+    window.supabaseSync.init().then(() => {
+        console.log('✅ Sincronizzazione Supabase inizializzata');
+    });
+}
             
             if (!localStorage.getItem('storeData')) {
                 const initialData = {
