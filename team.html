@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classifica Team - Maestro di Negozio</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 Classifica del Mese</h1>
+            <p class="subtitle">Chi sarà il Maestro di Negozio?</p>
+        </div>
+
+        <div class="back-button">
+            <button class="btn btn-secondary" onclick="goHome()">← Indietro</button>
+        </div>
+
+        <div id="leaderboard" class="leaderboard"></div>
+
+        <div class="team-motivational card">
+            <h3>💪 Obiettivo del Mese</h3>
+            <p>Raggiungi 450+ punti per diventare <strong>Maestro di Negozio</strong>!</p>
+            <div class="benefits-list">
+                <div class="benefit-item">✨ Budget extra per la gestione</div>
+                <div class="benefit-item">🎖️ Menzione nell'organigramma aziendale</div>
+                <div class="benefit-item">🏅 Premio annuale di eccellenza</div>
+            </div>
+        </div>
+
+        <div class="refresh-info">
+            <p>📱 Aggiornamento automatico ogni 30 secondi</p>
+            <button class="btn btn-primary" onclick="updateLeaderboard()">🔄 Aggiorna Ora</button>
+        </div>
+    </div>
+
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/data.js"></script>
+    <script src="assets/js/ui.js"></script>
+    <script>
+        function goHome() {
+            window.location.href = 'index.html';
+        }
+
+        // Aggiorna classifica all'avvio
+        updateLeaderboard();
+
+        // Auto-refresh ogni 30 secondi
+        setInterval(() => {
+            updateLeaderboard();
+        }, 30000);
+    </script>
+</body>
+</html>
