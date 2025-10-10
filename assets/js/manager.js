@@ -4,6 +4,16 @@
 // Gestione completa della dashboard manager
 
 // ========================================
+// CONTROLLO AUTENTICAZIONE
+// ========================================
+
+// Verifica password all'avvio
+if (sessionStorage.getItem('managerAuth') !== 'true') {
+    alert('⛔ Accesso negato! Devi inserire la password dalla home.');
+    window.location.href = 'index.html';
+}
+
+// ========================================
 // VARIABILI GLOBALI
 // ========================================
 let selectedPerson = null;
@@ -17,6 +27,13 @@ let charts = {};
 
 function goHome() {
     window.location.href = 'index.html';
+}
+
+function logout() {
+    if (confirm('🚪 Vuoi uscire dalla dashboard Manager?')) {
+        sessionStorage.removeItem('managerAuth');
+        window.location.href = 'index.html';
+    }
 }
 
 function switchTab(tabName) {
