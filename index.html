@@ -91,6 +91,13 @@
 
         // Inizializza dati quando il DOM è pronto
         document.addEventListener('DOMContentLoaded', function() {
+            // Inizializza sincronizzazione GitHub (se configurata)
+            if (window.githubSync) {
+                window.githubSync.init().then(() => {
+                    console.log('✅ Sincronizzazione GitHub inizializzata');
+                });
+            }
+            
             if (!localStorage.getItem('storeData')) {
                 const initialData = {
                     'Gemy': { points: 500, history: [] },
