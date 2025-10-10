@@ -538,6 +538,57 @@ body {
     opacity: 0.7;
 }
 
+.footer p {
+    font-size: 0.95em;
+    margin-bottom: 20px;
+}
+
+.branding {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 25px;
+    animation: fadeIn 1.5s ease;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logo-container svg {
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+.brand-text {
+    font-size: 1.5em;
+    font-weight: bold;
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
+}
+
+@media (max-width: 768px) {
+    .branding {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .brand-text {
+        font-size: 1.2em;
+    }
+    
+    .logo-container svg {
+        width: 60px;
+        height: 60px;
+    }
+}
+
 /* === ANIMATIONS === */
 @keyframes fadeIn {
     from {
