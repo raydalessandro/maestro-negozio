@@ -223,6 +223,31 @@ document.getElementById('historyToDate').value = today;
 // ========================================
 // GESTIONE TASK
 // ========================================
+// IMPORTANTE: Dichiarare loadTasksForDate PRIMA di renderTasks
+async function loadTasksForDate() {
+const date = document.getElementById('taskDate').value;
+if (!selectedPerson || !date) return;
+try {
+    const data = await getData();
+    const personData = data[selectedPerson];
+    const dayRecord = personData.history.find(h => h.date === date);
+
+    document.querySelectorAll('#tasksList input[type="checkbox"]').forEach(cb => {
+        cb.checked = false;
+    });
+
+    if (dayRecord && dayRecord.incompleteTasks) {
+        dayRecord.incompleteTasks.forEach(taskName => {
+            const checkbox = Array.from(document.querySelectorAll('#tasksList input[type="checkbox"]'))
+                .find(cb => cb.dataset.task === taskName);
+            if (checkbox) checkbox.checked = true;
+        });
+    }
+    updatePenaltySummary();
+} catch (error) {
+    console.error('Errore caricamento task:', error);
+}
+}
 function selectPerson(person) {
 selectedPerson = person;
 document.querySelectorAll('.person-btn').forEach(btn => btn.classList.remove('selected'));
@@ -257,30 +282,6 @@ for (const [category, taskList] of Object.entries(tasks)) {
 }
 document.getElementById('tasksList').innerHTML = html;
 loadTasksForDate();
-}
-async function loadTasksForDate() {
-const date = document.getElementById('taskDate').value;
-if (!selectedPerson || !date) return;
-try {
-    const data = await getData();
-    const personData = data[selectedPerson];
-    const dayRecord = personData.history.find(h => h.date === date);
-
-    document.querySelectorAll('#tasksList input[type="checkbox"]').forEach(cb => {
-        cb.checked = false;
-    });
-
-    if (dayRecord && dayRecord.incompleteTasks) {
-        dayRecord.incompleteTasks.forEach(taskName => {
-            const checkbox = Array.from(document.querySelectorAll('#tasksList input[type="checkbox"]'))
-                .find(cb => cb.dataset.task === taskName);
-            if (checkbox) checkbox.checked = true;
-        });
-    }
-    updatePenaltySummary();
-} catch (error) {
-    console.error('Errore caricamento task:', error);
-}
 }
 async function updatePenaltySummary() {
 const checkboxes = document.querySelectorAll('#tasksList input[type="checkbox"]:checked');
