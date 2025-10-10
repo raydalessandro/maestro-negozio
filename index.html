@@ -41,129 +41,73 @@
                 <div class="brand-title">EAR LAB</div>
             </div>
         </div>
-    <div class="landing-page">
-        <div class="header">
-            <h1>🏆 Maestro di Negozio</h1>
-            <p class="subtitle">Sistema di Monitoraggio e Gamification</p>
-        </div>
 
-        <div class="role-selector">
-            <div class="role-card" onclick="goToManager()">
-                <div class="role-icon">👨‍💼</div>
-                <h2>Manager</h2>
-                <p>Accesso completo al sistema di monitoraggio</p>
-                <button class="btn btn-primary">Accedi</button>
+        <div class="landing-page">
+            <div class="header">
+                <h1>🏆 Maestro di Negozio</h1>
+                <p class="subtitle">Sistema di Monitoraggio e Gamification</p>
             </div>
 
-            <div class="role-card" onclick="goToTeam()">
-                <div class="role-icon">🏆</div>
-                <h2>Team</h2>
-                <p>Visualizza la classifica e i tuoi progressi</p>
-                <button class="btn btn-secondary">Accedi</button>
-            </div>
-        </div>
+            <div class="role-selector">
+                <div class="role-card" onclick="goToManager()">
+                    <div class="role-icon">👨‍💼</div>
+                    <h2>Manager</h2>
+                    <p>Accesso completo al sistema di monitoraggio</p>
+                    <button class="btn btn-primary">Accedi</button>
+                </div>
 
-        <div class="footer">
-            <p>Made with ❤️ for store excellence</p>
-        </div>
-    </div>
-</div>
-
-<!-- Carica script nell'ordine corretto -->
-<script src="assets/js/config.js"></script>
-<script src="assets/js/github-storage.js"></script>
-<script src="assets/js/data.js"></script>
-<script src="assets/js/ui.js"></script>
-
-<script>
-    function showLoading(message = 'Caricamento...') {
-        const loader = document.createElement('div');
-        loader.id = 'app-loader';
-        loader.innerHTML = `
-            <div style="
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0,0,0,0.8);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 9999;
-                backdrop-filter: blur(5px);
-            ">
-                <div style="
-                    background: rgba(255, 255, 255, 0.15);
-                    backdrop-filter: blur(10px);
-                    padding: 40px;
-                    border-radius: 20px;
-                    text-align: center;
-                    border: 2px solid rgba(255, 255, 255, 0.2);
-                ">
-                    <div style="font-size: 3em; margin-bottom: 20px;">⏳</div>
-                    <div style="font-size: 1.2em; color: white;">${message}</div>
+                <div class="role-card" onclick="goToTeam()">
+                    <div class="role-icon">🏆</div>
+                    <h2>Team</h2>
+                    <p>Visualizza la classifica e i tuoi progressi</p>
+                    <button class="btn btn-secondary">Accedi</button>
                 </div>
             </div>
-        `;
-        document.body.appendChild(loader);
-    }
 
-    function hideLoading() {
-        const loader = document.getElementById('app-loader');
-        if (loader) loader.remove();
-    }
+            <div class="footer">
+                <p>Made with ❤️ for store excellence</p>
+            </div>
+        </div>
+    </div>
 
-    function goToManager() {
-        // Chiedi password
-        const password = prompt('🔐 Inserisci password Manager:');
-        
-        if (password === 'oakself') {
-            // Password corretta - salva in sessionStorage
-            sessionStorage.setItem('managerAuth', 'true');
-            window.location.href = 'manager.html';
-        } else if (password !== null) {
-            // Password sbagliata (null = annulla)
-            alert('❌ Password errata!');
+    <script src="assets/js/github-storage.js"></script>
+    <script>
+        function goToManager() {
+            // Chiedi password
+            const password = prompt('🔐 Inserisci password Manager:');
+            
+            if (password === 'oakself') {
+                // Password corretta - salva in sessionStorage
+                sessionStorage.setItem('managerAuth', 'true');
+                window.location.href = 'manager.html';
+            } else if (password !== null) {
+                // Password sbagliata (null = annulla)
+                alert('❌ Password errata!');
+            }
         }
-    }
 
-    function goToTeam() {
-        window.location.href = 'team.html';
-    }
+        function goToTeam() {
+            window.location.href = 'team.html';
+        }
 
-    // Inizializza app quando il DOM è pronto
-    document.addEventListener('DOMContentLoaded', async function() {
-        showLoading('Inizializzazione...');
-        
-        try {
-            // Inizializza GitHub sync
+        // Inizializza dati quando il DOM è pronto
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inizializza sincronizzazione GitHub (se configurata)
             if (window.githubSync) {
-                await window.githubSync.init();
-                console.log('✅ GitHub sync inizializzato');
-            } else {
-                throw new Error('GitHub sync non disponibile');
+                window.githubSync.init().then(() => {
+                    console.log('✅ Sincronizzazione GitHub inizializzata');
+                });
             }
             
-            hideLoading();
-            
-        } catch (error) {
-            hideLoading();
-            
-            // Mostra errore ma permetti comunque di procedere
-            console.error('⚠️ Errore inizializzazione:', error);
-            
-            // Alert solo se errore critico
-            if (error.message.includes('GitHub sync non disponibile')) {
-                alert(
-                    '⚠️ Attenzione\n\n' +
-                    'Impossibile connettersi al sistema di salvataggio.\n' +
-                    'Verifica la connessione internet.\n\n' +
-                    'Puoi comunque procedere, ma i dati potrebbero non salvarsi.'
-                );
+            if (!localStorage.getItem('storeData')) {
+                const initialData = {
+                    'Gemy': { points: 500, history: [] },
+                    'Valeria': { points: 500, history: [] },
+                    'Riky': { points: 500, history: [] }
+                };
+                localStorage.setItem('storeData', JSON.stringify(initialData));
             }
-        }
-    });
-</script>
+        });
+    </script>
 </body>
 </html>
