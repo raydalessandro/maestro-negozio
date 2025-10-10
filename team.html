@@ -12,185 +12,232 @@
             <h1>🏆 Classifica del Mese</h1>
             <p class="subtitle">Chi sarà il Maestro di Negozio?</p>
         </div>
-    <div class="back-button">
-        <button class="btn btn-secondary" onclick="goHome()">← Indietro</button>
-    </div>
 
-    <div id="leaderboard" class="leaderboard"></div>
+        <div class="back-button">
+            <button class="btn btn-secondary" onclick="goHome()">← Indietro</button>
+        </div>
 
-    <div class="team-motivational card">
-        <h3>💪 Obiettivo del Mese</h3>
-        <p>Raggiungi 450+ punti per diventare <strong>Maestro di Negozio</strong>!</p>
-        <div class="benefits-list">
-            <div class="benefit-item">✨ Budget extra per la gestione</div>
-            <div class="benefit-item">🎖️ Menzione nell'organigramma aziendale</div>
-            <div class="benefit-item">🏅 Premio annuale di eccellenza</div>
+        <div class="tabs">
+            <div class="tab active" onclick="switchTeamTab('leaderboard')">🏆 Classifica</div>
+            <div class="tab" onclick="switchTeamTab('feedback')">💭 Feedback</div>
+        </div>
+
+        <!-- TAB CLASSIFICA -->
+        <div id="team-leaderboard" class="tab-content active">
+            <div id="leaderboard" class="leaderboard"></div>
+
+            <div class="team-motivational card">
+                <h3>💪 Obiettivo del Mese</h3>
+                <p>Raggiungi 450+ punti per diventare <strong>Maestro di Negozio</strong>!</p>
+                <div class="benefits-list">
+                    <div class="benefit-item">✨ Budget extra per la gestione</div>
+                    <div class="benefit-item">🎖️ Menzione nell'organigramma aziendale</div>
+                    <div class="benefit-item">🏅 Premio annuale di eccellenza</div>
+                </div>
+            </div>
+
+            <div class="refresh-info">
+                <p>📱 Aggiornamento automatico ogni 30 secondi</p>
+                <button class="btn btn-primary" onclick="updateLeaderboard()">🔄 Aggiorna Ora</button>
+            </div>
+        </div>
+
+        <!-- TAB FEEDBACK -->
+        <div id="team-feedback" class="tab-content">
+            <div class="card feedback-intro">
+                <h2>💭 Il Tuo Feedback Conta</h2>
+                <p style="opacity: 0.9; margin-top: 10px;">
+                    La tua opinione è importante! Questo feedback è <strong>completamente anonimo</strong> 
+                    e aiuta il management a migliorare l'ambiente di lavoro.
+                </p>
+            </div>
+
+            <div class="card feedback-form">
+                <h3>Come Ti Senti Oggi?</h3>
+                <div class="mood-selector">
+                    <div class="mood-option" data-mood="1" onclick="selectMood(1)">
+                        <div class="mood-emoji">😞</div>
+                        <div class="mood-label">Molto Male</div>
+                    </div>
+                    <div class="mood-option" data-mood="2" onclick="selectMood(2)">
+                        <div class="mood-emoji">😕</div>
+                        <div class="mood-label">Male</div>
+                    </div>
+                    <div class="mood-option" data-mood="3" onclick="selectMood(3)">
+                        <div class="mood-emoji">😐</div>
+                        <div class="mood-label">Ok</div>
+                    </div>
+                    <div class="mood-option" data-mood="4" onclick="selectMood(4)">
+                        <div class="mood-emoji">🙂</div>
+                        <div class="mood-label">Bene</div>
+                    </div>
+                    <div class="mood-option" data-mood="5" onclick="selectMood(5)">
+                        <div class="mood-emoji">😃</div>
+                        <div class="mood-label">Molto Bene</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 30px;">
+                    <h3>Categoria (Opzionale)</h3>
+                    <select id="feedbackCategory" class="feedback-select">
+                        <option value="generale">Generale</option>
+                        <option value="ambiente">Ambiente di Lavoro</option>
+                        <option value="turni">Turni e Orari</option>
+                        <option value="formazione">Formazione</option>
+                        <option value="attrezzatura">Attrezzatura/Strumenti</option>
+                        <option value="comunicazione">Comunicazione</option>
+                        <option value="altro">Altro</option>
+                    </select>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <h3>Hai Suggerimenti o Commenti? (Opzionale)</h3>
+                    <textarea 
+                        id="feedbackMessage" 
+                        class="feedback-textarea"
+                        placeholder="Es: Servirebbe più tempo per l'inventario, oppure sarebbe utile avere una checklist cartacea...
+                        
+Ricorda: questo messaggio è completamente anonimo!"
+                        rows="5"
+                    ></textarea>
+                    <p style="opacity: 0.7; font-size: 0.9em; margin-top: 10px;">
+                        💡 Sii costruttivo: cosa funziona bene? Cosa si può migliorare?
+                    </p>
+                </div>
+
+                <div class="action-buttons" style="margin-top: 25px;">
+                    <button class="btn btn-primary" onclick="submitFeedback()" id="submitBtn">
+                        📤 Invia Feedback Anonimo
+                    </button>
+                </div>
+            </div>
+
+            <div class="card feedback-stats">
+                <h3>📊 Umore del Team</h3>
+                <div id="teamMoodDisplay"></div>
+            </div>
         </div>
     </div>
 
-    <div class="refresh-info">
-        <p>📱 Aggiornamento automatico ogni 30 secondi</p>
-        <button class="btn btn-primary" onclick="manualRefresh()">🔄 Aggiorna Ora</button>
-    </div>
-</div>
+    <!-- Carica script nell'ordine corretto -->
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/github-storage.js"></script>
+    <script src="assets/js/data.js"></script>
+    <script src="assets/js/ui.js"></script>
+    <script src="assets/js/feedback.js"></script>
+    
+    <script>
+        let selectedMoodValue = null;
 
-<!-- Carica script nell'ordine corretto -->
-<script src="assets/js/config.js"></script>
-<script src="assets/js/github-storage.js"></script>
-<script src="assets/js/data.js"></script>
-<script src="assets/js/ui.js"></script>
+        function goHome() {
+            window.location.href = 'index.html';
+        }
 
-<script>
-    function showLoading(message = 'Caricamento...') {
-        const loader = document.createElement('div');
-        loader.id = 'app-loader';
-        loader.innerHTML = `
-            <div style="
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0,0,0,0.8);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 9999;
-                backdrop-filter: blur(5px);
-            ">
-                <div style="
-                    background: rgba(255, 255, 255, 0.15);
-                    backdrop-filter: blur(10px);
-                    padding: 40px;
-                    border-radius: 20px;
-                    text-align: center;
-                    border: 2px solid rgba(255, 255, 255, 0.2);
-                ">
-                    <div style="font-size: 3em; margin-bottom: 20px;">⏳</div>
-                    <div style="font-size: 1.2em; color: white;">${message}</div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(loader);
-    }
-
-    function hideLoading() {
-        const loader = document.getElementById('app-loader');
-        if (loader) loader.remove();
-    }
-
-    function goHome() {
-        window.location.href = 'index.html';
-    }
-
-    async function updateLeaderboardAsync() {
-        try {
-            const leaderboardDiv = document.getElementById('leaderboard');
-            if (!leaderboardDiv) return;
-
-            const rankings = await getLeaderboard();
+        function switchTeamTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             
-            const html = rankings.map((player, idx) => {
-                const emoji = levelEmojis[player.level.name] || '🎯';
-                const progress = (player.points / INITIAL_POINTS) * 100;
-                
-                return `
-                    <div class="player-card">
-                        <div class="player-rank rank-${idx + 1}">${idx + 1}</div>
-                        <div class="player-info">
-                            <div class="player-name">${player.name}</div>
-                            <div class="player-level">
-                                <span class="level-badge">${emoji} ${player.level.name}</span>
-                                <span>${player.points} / ${INITIAL_POINTS} PP</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: ${progress}%"></div>
-                            </div>
-                            <div class="player-stats">
-                                <div class="stat">
-                                    <div class="stat-value">${player.daysWithErrors}</div>
-                                    <div class="stat-label">Giorni con Errori</div>
-                                </div>
-                                <div class="stat">
-                                    <div class="stat-value">-${player.totalPenalty}</div>
-                                    <div class="stat-label">Penalità Totali</div>
-                                </div>
-                                <div class="stat">
-                                    <div class="stat-value">${player.pointsLost}</div>
-                                    <div class="stat-label">Punti Persi</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+            document.getElementById('team-' + tabName).classList.add('active');
+            event.target.classList.add('active');
 
-            leaderboardDiv.innerHTML = html;
-        } catch (error) {
-            console.error('Errore aggiornamento classifica:', error);
-            document.getElementById('leaderboard').innerHTML = `
-                <div class="card" style="text-align: center; padding: 40px;">
-                    <div style="font-size: 3em; margin-bottom: 20px;">⚠️</div>
-                    <h3>Errore Caricamento</h3>
-                    <p>Impossibile caricare la classifica.</p>
-                    <button class="btn btn-primary" onclick="manualRefresh()" style="margin-top: 20px;">
-                        🔄 Riprova
-                    </button>
-                </div>
-            `;
-        }
-    }
-
-    async function manualRefresh() {
-        showLoading('Aggiornamento...');
-        
-        // Invalida cache per forzare reload da GitHub
-        if (typeof invalidateCache === 'function') {
-            invalidateCache();
-        }
-        
-        await updateLeaderboardAsync();
-        hideLoading();
-    }
-
-    // Inizializza quando il DOM è pronto
-    document.addEventListener('DOMContentLoaded', async function() {
-        showLoading('Caricamento classifica...');
-        
-        try {
-            // Inizializza GitHub sync
-            if (window.githubSync) {
-                await window.githubSync.init();
-            } else {
-                throw new Error('GitHub sync non disponibile');
+            if (tabName === 'feedback') {
+                updateTeamMoodDisplay();
             }
-            
-            // Carica classifica iniziale
-            await updateLeaderboardAsync();
-            
-            hideLoading();
-            
-            // Auto-refresh ogni 30 secondi
-            setInterval(async function() {
-                console.log('🔄 Auto-refresh classifica...');
-                await updateLeaderboardAsync();
-            }, 30000);
-            
-            console.log('✅ Classifica inizializzata');
-            
-        } catch (error) {
-            hideLoading();
-            
-            alert(
-                '⚠️ Errore Inizializzazione\n\n' +
-                'Impossibile caricare la classifica.\n' +
-                'Verifica la connessione internet e riprova.\n\n' +
-                'Dettagli: ' + error.message
-            );
-            
-            console.error('Init error:', error);
         }
-    });
-</script>
+
+        function selectMood(mood) {
+            selectedMoodValue = mood;
+            
+            // Rimuovi selezione precedente
+            document.querySelectorAll('.mood-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            
+            // Aggiungi selezione corrente
+            const selected = document.querySelector(`.mood-option[data-mood="${mood}"]`);
+            if (selected) {
+                selected.classList.add('selected');
+            }
+        }
+
+        function submitFeedback() {
+            if (!selectedMoodValue) {
+                alert('❌ Seleziona come ti senti prima di inviare!');
+                return;
+            }
+
+            const message = document.getElementById('feedbackMessage').value.trim();
+            const category = document.getElementById('feedbackCategory').value;
+
+            // Salva feedback
+            saveFeedback(selectedMoodValue, message, category);
+
+            // Feedback visivo
+            alert('✅ Grazie per il tuo feedback!\n\nIl tuo messaggio anonimo è stato inviato al management.');
+
+            // Reset form
+            selectedMoodValue = null;
+            document.getElementById('feedbackMessage').value = '';
+            document.getElementById('feedbackCategory').value = 'generale';
+            document.querySelectorAll('.mood-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+
+            // Aggiorna display
+            updateTeamMoodDisplay();
+        }
+
+        function updateTeamMoodDisplay() {
+            const weekMood = getCurrentWeekMood();
+            const monthMood = getCurrentMonthMood();
+            const stats = getFeedbackStats();
+
+            let html = '<div style="text-align: center; padding: 20px;">';
+
+            if (!weekMood && !monthMood) {
+                html += '<p style="opacity: 0.7;">📊 Nessun feedback ancora questa settimana.<br>Sii il primo a condividere come ti senti!</p>';
+            } else {
+                if (weekMood) {
+                    const color = moodToColor(weekMood);
+                    html += `
+                        <div style="margin-bottom: 20px;">
+                            <div style="font-size: 3em;">${moodToEmoji(Math.round(weekMood))}</div>
+                            <div style="font-size: 2em; font-weight: bold; color: ${color};">${weekMood}/5</div>
+                            <div style="opacity: 0.8;">Media Questa Settimana</div>
+                            <div style="font-size: 0.9em; opacity: 0.6; margin-top: 5px;">${stats.thisWeek} feedback ricevuti</div>
+                        </div>
+                    `;
+                }
+
+                if (monthMood) {
+                    const color = moodToColor(monthMood);
+                    html += `
+                        <div style="padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.2);">
+                            <div style="font-size: 1.5em; font-weight: bold; color: ${color};">${monthMood}/5</div>
+                            <div style="opacity: 0.8;">Media Questo Mese</div>
+                            <div style="font-size: 0.9em; opacity: 0.6; margin-top: 5px;">${stats.thisMonth} feedback totali</div>
+                        </div>
+                    `;
+                }
+            }
+
+            html += '</div>';
+            document.getElementById('teamMoodDisplay').innerHTML = html;
+        }
+
+        // Aspetta che il DOM sia caricato
+        document.addEventListener('DOMContentLoaded', function() {
+            // Aggiorna classifica all'avvio
+            updateLeaderboard();
+            updateTeamMoodDisplay();
+
+            // Auto-refresh classifica ogni 30 secondi
+            setInterval(function() {
+                if (document.getElementById('team-leaderboard').classList.contains('active')) {
+                    updateLeaderboard();
+                }
+            }, 30000);
+        });
+    </script>
 </body>
 </html>
