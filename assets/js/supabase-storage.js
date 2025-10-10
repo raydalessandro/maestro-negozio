@@ -8,8 +8,8 @@
 // ========================================
 
 const SUPABASE_CONFIG = {
-    url: 'https://TUO-PROJECT-ID.supabase.co', // ← INCOLLA QUI Project URL
-    key: 'TUA-ANON-KEY-QUI' // ← INCOLLA QUI anon public key
+    url: 'https://zpfmkxivfexxldadrxje.supabase.co', // ← INCOLLA QUI Project URL
+    key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwZm1reGl2ZmV4eGxkYWRyeGplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAwOTc1NTEsImV4cCI6MjA3NTY3MzU1MX0.FHNE6tThLByEvmAEFzVq5J-pfqQGg8SivOvZIAq9yko' // ← INCOLLA QUI anon public key
 };
 
 // ========================================
