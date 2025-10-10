@@ -22,8 +22,12 @@ Sistema di monitoraggio task con gamification per team retail.
   - 💡 Raccomandazioni personalizzate
   - 🏥 Team Health Score
   - 🔗 Analisi correlazioni task
+- ✅ **Report PDF Visivi** (NEW! 📄)
+  - Report settimanale 1 pagina
+  - Report mensile completo
+  - Stampabile/salvabile come PDF
+  - Focus su azioni concrete
 - ✅ Storico completo con filtri
-- ✅ Export dati (CSV e JSON)
 - ✅ Reset mensile
 
 ### 🏆 Vista Team
@@ -32,6 +36,33 @@ Sistema di monitoraggio task con gamification per team retail.
 - ✅ Progress bar visuale
 - ✅ Statistiche dettagliate
 - ✅ Auto-refresh ogni 30 secondi
+
+## 🚀 Deploy su GitHub Pages
+
+### 🔐 Password Manager
+
+La sezione Manager è protetta da password per evitare accessi non autorizzati dal team.
+
+**Password di default:** `oakself`
+
+**Come funziona:**
+- Quando si clicca "Manager" da home → chiede password
+- Password corretta → accesso consentito per la sessione
+- Password sbagliata → rimani sulla home
+- Logout automatico alla chiusura del browser
+
+**Per cambiare password:**
+1. Apri `index.html`
+2. Cerca `if (password === 'oakself')`
+3. Cambia `'oakself'` con la tua password
+4. Salva e carica su GitHub
+
+**⚠️ Importante:**
+- NON condividere la password con il team
+- È una protezione semplice, non crittografica
+- Sufficiente per evitare accessi accidentali
+
+---
 
 ## 🚀 Deploy su GitHub Pages
 
@@ -57,13 +88,21 @@ maestro-negozio/
 │   └── js/
 │       ├── config.js
 │       ├── data.js
-│       └── ui.js
+│       ├── ui.js
+│       ├── analytics.js
+│       └── report.js
 └── README.md
 ```
 
 ### 3. Copia i file che ti ho creato
 
-Copia tutti i file negli artifact nelle rispettive cartelle.
+Copia tutti i file negli artifact nelle rispettive cartelle:
+- `index.html`, `team.html`, `manager.html` → root
+- `style.css` → `assets/css/`
+- `config.js`, `data.js`, `ui.js`, `analytics.js`, `report.js`, `manager.js` → `assets/js/`
+- `README.md`, `QUICK_START.md` → root
+
+**Nota**: `manager.js` contiene tutta la logica della dashboard manager per mantenere `manager.html` pulito e leggibile.
 
 ### 4. Pubblica su GitHub
 
@@ -185,6 +224,55 @@ Identifica quali task vengono spesso saltate insieme:
 
 **Suggerimento**: Controlla Analytics almeno 1 volta a settimana per interventi proattivi!
 
+## 📄 Report PDF
+
+### Report Settimanale
+Un report **di 1 pagina** semplice e visivo che mostra:
+
+**🏥 Salute Team**
+- Score 0-100 con colore
+- Media performance, morale, top performer
+
+**⚠️ Chi Ha Bisogno di Aiuto**
+- Lista persone sotto 300 punti
+- Azione specifica per ognuna (1-on-1, monitoraggio)
+- Codice colore: 🔴 Critico (< 200) / 🟡 Attenzione (200-300)
+
+**🎯 Task Più Problematiche**
+- Top 5 task con più errori
+- Suggerimento azione per ognuna
+- Numero errori in evidenza
+
+**✅ Azioni da Fare**
+- Checklist max 5 azioni concrete
+- Basata su insights AI
+- Da completare nella settimana
+
+**🏆 Classifica Completa**
+- Tutti i membri con punti e livello
+- Giorni con errori
+
+### Report Mensile
+Report completo di fine mese con:
+- Riepilogo statistiche mese
+- Classifica finale con premi
+- Top 10 task problematiche
+- Confronto performance
+
+### Come Generare Report
+
+1. Vai in **Vista Manager** → Tab **Storico**
+2. Click su **📄 Report Settimanale** o **📊 Report Mensile**
+3. Si apre nuova finestra con report
+4. **Stampa** (Ctrl+P / Cmd+P)
+5. **Salva come PDF** o stampa su carta
+
+**Quando Generare Report:**
+- **Settimanale**: Ogni lunedì mattina
+- **Mensile**: Ultimo giorno del mese
+
+**Suggerimento**: Stampa il report settimanale e appendilo in bacheca per il team! 📌
+
 ## 🎯 Sistema di Punteggio
 
 ### Punti Iniziali
@@ -252,16 +340,6 @@ Apri `assets/css/style.css` e modifica le variabili CSS:
     --secondary-gradient: linear-gradient(135deg, #TUOCOLORE3, #TUOCOLORE4);
 }
 ```
-
-## 📊 Export Dati
-
-### CSV
-- Click su **Export CSV** nella vista Manager
-- Ottieni report completo in formato Excel
-
-### JSON
-- Click su **Export JSON** per backup completo
-- Usa il file per ripristinare o migrare dati
 
 ## 🔄 Reset Mensile
 
