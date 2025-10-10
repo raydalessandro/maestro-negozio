@@ -8,7 +8,7 @@
 // ========================================
 
 const GITHUB_CONFIG = {
-    owner: 'TUO-USERNAME',           // Cambia con il tuo username GitHub
+    owner: 'raydalessandro',           // Cambia con il tuo username GitHub
     repo: 'maestro-negozio',         // Nome della tua repository
     branch: 'main',                  // O 'master' se usi quello
     dataFile: 'data/store-data.json', // Path del file dati nella repo
