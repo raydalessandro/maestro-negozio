@@ -858,6 +858,15 @@ function loadCorrelations() {
 // ========================================
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Inizializza GitHub sync
+    if (window.githubSync && window.githubSync.init) {
+        window.githubSync.init().then(() => {
+            console.log('✅ GitHub sync pronta');
+        }).catch(err => {
+            console.error('❌ Errore GitHub init:', err);
+        });
+    }
+    
     updateMonthDisplay();
     setTodayDate();
     updateLeaderboard();
