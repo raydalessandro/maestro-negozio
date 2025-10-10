@@ -15,6 +15,11 @@
 - iPhone: Condividi → Aggiungi a Home
 - Android: Menu → Aggiungi a schermata Home
 
+**⚠️ Password Manager:**
+- Per accedere alla sezione Manager serve password: **`oakself`**
+- Il team NON deve conoscere questa password
+- Serve solo per proteggere l'accesso alla dashboard manager
+
 ---
 
 ## 🎯 Cosa Fai Ogni Giorno
