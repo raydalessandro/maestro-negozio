@@ -156,35 +156,40 @@ async function saveData(data) {
             return false;
         }
         
-        // Se GitHub sync disponibile, usa quello
+        // PRIORITÀ: Salva su GitHub
         if (window.githubSync && typeof window.githubSync.save === 'function') {
-            await window.githubSync.save(data);
-        } else {
-            // Fallback a localStorage
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-            localStorage.setItem(LAST_SAVE_KEY, new Date().toISOString());
-        }
-        
-        // Salva backup automatico locale
-        saveBackup(data);
-        
-        return true;
-    } catch (error) {
-        console.error('❌ Errore nel salvataggio dati:', error);
-        
-        // Se quota superata, prova a pulire vecchi backup
-        if (error.name === 'QuotaExceededError') {
-            console.warn('⚠️ Spazio localStorage pieno, pulizia backup vecchi...');
-            localStorage.removeItem(BACKUP_KEY);
-            try {
+            console.log('💾 Salvataggio su GitHub...');
+            const success = await window.githubSync.save(data);
+            
+            if (success) {
+                console.log('✅ Dati salvati su GitHub');
+                // Salva anche in localStorage come cache
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
                 localStorage.setItem(LAST_SAVE_KEY, new Date().toISOString());
                 return true;
-            } catch (e) {
-                console.error('❌ Impossibile salvare anche dopo pulizia:', e);
+            } else {
+                console.error('❌ Errore salvataggio GitHub!');
+                alert('⚠️ ERRORE SALVATAGGIO!\n\nI dati NON sono stati salvati su GitHub.\nVerifica connessione internet e configurazione GitHub.\n\nI dati rimarranno solo su questo browser.');
+                
+                // Fallback localStorage
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                localStorage.setItem(LAST_SAVE_KEY, new Date().toISOString());
+                return false;
             }
+        } else {
+            // GitHub non configurato
+            console.warn('⚠️ GitHub Storage non configurato!');
+            alert('⚠️ ATTENZIONE!\n\nGitHub Storage NON è configurato.\nI dati verranno salvati SOLO su questo browser.\n\nConfigura GitHub seguendo SETUP_GITHUB.md');
+            
+            // Fallback localStorage
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            localStorage.setItem(LAST_SAVE_KEY, new Date().toISOString());
+            return false;
         }
         
+    } catch (error) {
+        console.error('❌ Errore nel salvataggio dati:', error);
+        alert('❌ ERRORE GRAVE!\n\nImpossibile salvare i dati.\n\n' + error.message);
         return false;
     }
 }
