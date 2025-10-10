@@ -282,7 +282,7 @@ function clearSelection() {
     updatePenaltySummary();
 }
 
-function saveTasksForToday() {
+async function saveTasksForToday() {
     if (!selectedPerson) {
         alert('❌ Seleziona una persona!');
         return;
@@ -315,9 +315,15 @@ function saveTasksForToday() {
     // Ricalcola punti totali
     data[selectedPerson].points = 500 - data[selectedPerson].history.reduce((sum, h) => sum + h.penalty, 0);
     
-    saveData(data);
+    // Salva (con await per GitHub)
+    const success = await saveData(data);
     
-    alert(`✅ Salvato!\n\nPersona: ${selectedPerson}\nData: ${date}\nPenalità: -${totalPenalty} PP\nPunti attuali: ${data[selectedPerson].points} PP`);
+    if (success) {
+        alert(`✅ Salvato su GitHub!\n\nPersona: ${selectedPerson}\nData: ${date}\nPenalità: -${totalPenalty} PP\nPunti attuali: ${data[selectedPerson].points} PP`);
+    } else {
+        alert(`⚠️ Salvato SOLO in locale!\n\nPersona: ${selectedPerson}\nData: ${date}\nPenalità: -${totalPenalty} PP\nPunti attuali: ${data[selectedPerson].points} PP\n\n❌ GitHub NON disponibile - verifica connessione!`);
+    }
+    
     updatePenaltySummary();
 }
 
