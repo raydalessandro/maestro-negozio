@@ -12,7 +12,7 @@ const GITHUB_CONFIG = {
     repo: 'maestro-negozio',         // Nome della tua repository
     branch: 'main',                  // O 'master' se usi quello
     dataFile: 'data/store-data.json', // Path del file dati nella repo
-    token: null                      // Token GitHub (opzionale per pubbliche)
+    token: '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' // Token GitHub (opzionale per pubbliche)
 };
 
 // ========================================
