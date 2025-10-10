@@ -163,10 +163,21 @@
                 <div class="action-buttons">
                     <button class="btn btn-primary" onclick="generateWeeklyReport()">📄 Report Settimanale (PDF)</button>
                     <button class="btn btn-primary" onclick="generateMonthlyReport()">📊 Report Mensile (PDF)</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>💾 Backup Dati</h3>
+                <p style="margin-bottom: 15px; opacity: 0.8; font-size: 0.95em;">
+                    💡 Scarica backup periodici per conservare lo storico anche a fine anno.
+                </p>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="downloadBackup()">💾 Scarica Backup</button>
+                    <button class="btn btn-secondary" onclick="uploadBackup()">📥 Carica Backup</button>
                     <button class="btn btn-secondary" onclick="resetMonth()">🔄 Reset Mese</button>
                 </div>
-                <p style="margin-top: 15px; opacity: 0.8; font-size: 0.95em;">
-                    💡 I report si aprono in una nuova finestra. Usa Ctrl+P o Cmd+P per salvare come PDF.
+                <p style="margin-top: 15px; opacity: 0.7; font-size: 0.9em;">
+                    ⚠️ Consiglio: Scarica backup ogni fine mese!
                 </p>
             </div>
         </div>
@@ -174,6 +185,7 @@
 
     <!-- Script nell'ordine corretto -->
     <script src="assets/js/config.js"></script>
+    <script src="assets/js/github-storage.js"></script>
     <script src="assets/js/data.js"></script>
     <script src="assets/js/ui.js"></script>
     <script src="assets/js/analytics.js"></script>
