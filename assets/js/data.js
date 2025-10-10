@@ -9,14 +9,63 @@
 // ========================================
 const STORAGE_KEY = 'storeData';
 const STORAGE_VERSION = '1.0';
+const BACKUP_KEY = 'storeDataBackup';
+const LAST_SAVE_KEY = 'lastSaveTimestamp';
 
-// Uncomment per Firebase:
-// const FIREBASE_CONFIG = {
-//     apiKey: "YOUR_API_KEY",
-//     authDomain: "YOUR_PROJECT.firebaseapp.com",
-//     databaseURL: "YOUR_DATABASE_URL",
-//     projectId: "YOUR_PROJECT_ID"
-// };
+// ========================================
+// SISTEMA BACKUP AUTOMATICO
+// ========================================
+
+/**
+ * Salva backup automatico
+ */
+function saveBackup(data) {
+    try {
+        const backup = {
+            version: STORAGE_VERSION,
+            timestamp: new Date().toISOString(),
+            data: data
+        };
+        localStorage.setItem(BACKUP_KEY, JSON.stringify(backup));
+        localStorage.setItem(LAST_SAVE_KEY, backup.timestamp);
+        console.log('💾 Backup salvato:', backup.timestamp);
+    } catch (e) {
+        console.error('❌ Errore salvataggio backup:', e);
+    }
+}
+
+/**
+ * Recupera backup se dati principali sono persi
+ */
+function restoreFromBackup() {
+    try {
+        const backup = localStorage.getItem(BACKUP_KEY);
+        if (backup) {
+            const parsed = JSON.parse(backup);
+            console.log('🔄 Backup trovato del:', parsed.timestamp);
+            return parsed.data;
+        }
+    } catch (e) {
+        console.error('❌ Errore recupero backup:', e);
+    }
+    return null;
+}
+
+/**
+ * Verifica integrità dati
+ */
+function verifyDataIntegrity(data) {
+    if (!data || typeof data !== 'object') return false;
+    
+    // Verifica che abbia le persone corrette
+    for (const person of people) {
+        if (!data[person] || !data[person].hasOwnProperty('points') || !Array.isArray(data[person].history)) {
+            return false;
+        }
+    }
+    
+    return true;
+}
 
 // ========================================
 // INIZIALIZZAZIONE DATI
@@ -26,7 +75,21 @@ const STORAGE_VERSION = '1.0';
  * Inizializza i dati se non esistono
  */
 function initializeData() {
-    if (!localStorage.getItem(STORAGE_KEY)) {
+    let data = localStorage.getItem(STORAGE_KEY);
+    
+    if (!data) {
+        console.log('📦 Nessun dato trovato, controllo backup...');
+        
+        // Prova a recuperare da backup
+        const backup = restoreFromBackup();
+        if (backup && verifyDataIntegrity(backup)) {
+            console.log('✅ Dati recuperati da backup!');
+            saveData(backup);
+            return;
+        }
+        
+        // Crea nuovi dati
+        console.log('🆕 Inizializzazione nuovi dati...');
         const initialData = {};
         people.forEach(person => {
             initialData[person] = {
@@ -36,6 +99,29 @@ function initializeData() {
         });
         saveData(initialData);
         console.log('✅ Dati inizializzati');
+    } else {
+        // Verifica integrità dati esistenti
+        try {
+            const parsed = JSON.parse(data);
+            if (!verifyDataIntegrity(parsed)) {
+                console.warn('⚠️ Dati corrotti, tentativo recupero backup...');
+                const backup = restoreFromBackup();
+                if (backup && verifyDataIntegrity(backup)) {
+                    saveData(backup);
+                    console.log('✅ Dati recuperati da backup');
+                } else {
+                    throw new Error('Backup non disponibile');
+                }
+            }
+        } catch (e) {
+            console.error('❌ Errore verifica dati:', e);
+        }
+    }
+    
+    // Log ultima modifica
+    const lastSave = localStorage.getItem(LAST_SAVE_KEY);
+    if (lastSave) {
+        console.log('📅 Ultimo salvataggio:', new Date(lastSave).toLocaleString('it-IT'));
     }
 }
 
@@ -62,12 +148,43 @@ function getData() {
  * @param {object} data - Dati da salvare
  * @returns {boolean} True se successo
  */
-function saveData(data) {
+async function saveData(data) {
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        // Verifica integrità prima di salvare
+        if (!verifyDataIntegrity(data)) {
+            console.error('❌ Tentativo di salvare dati non validi!');
+            return false;
+        }
+        
+        // Se GitHub sync disponibile, usa quello
+        if (window.githubSync && typeof window.githubSync.save === 'function') {
+            await window.githubSync.save(data);
+        } else {
+            // Fallback a localStorage
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            localStorage.setItem(LAST_SAVE_KEY, new Date().toISOString());
+        }
+        
+        // Salva backup automatico locale
+        saveBackup(data);
+        
         return true;
     } catch (error) {
         console.error('❌ Errore nel salvataggio dati:', error);
+        
+        // Se quota superata, prova a pulire vecchi backup
+        if (error.name === 'QuotaExceededError') {
+            console.warn('⚠️ Spazio localStorage pieno, pulizia backup vecchi...');
+            localStorage.removeItem(BACKUP_KEY);
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                localStorage.setItem(LAST_SAVE_KEY, new Date().toISOString());
+                return true;
+            } catch (e) {
+                console.error('❌ Impossibile salvare anche dopo pulizia:', e);
+            }
+        }
+        
         return false;
     }
 }
