@@ -35,21 +35,27 @@
         </div>
     </div>
 
+    <!-- Carica script nell'ordine corretto -->
     <script src="assets/js/config.js"></script>
+    <script src="assets/js/github-storage.js"></script>
     <script src="assets/js/data.js"></script>
     <script src="assets/js/ui.js"></script>
+    
     <script>
         function goHome() {
             window.location.href = 'index.html';
         }
 
-        // Aggiorna classifica all'avvio
-        updateLeaderboard();
-
-        // Auto-refresh ogni 30 secondi
-        setInterval(() => {
+        // Aspetta che il DOM sia caricato
+        document.addEventListener('DOMContentLoaded', function() {
+            // Aggiorna classifica all'avvio
             updateLeaderboard();
-        }, 30000);
+
+            // Auto-refresh ogni 30 secondi
+            setInterval(function() {
+                updateLeaderboard();
+            }, 30000);
+        });
     </script>
 </body>
 </html>
