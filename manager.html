@@ -157,12 +157,15 @@
             </div>
 
             <div class="card">
-                <h3>📥 Export Dati</h3>
+                <h3>📄 Report e Gestione</h3>
                 <div class="action-buttons">
-                    <button class="btn btn-primary" onclick="exportCSV()">📄 Export CSV</button>
-                    <button class="btn btn-secondary" onclick="exportJSON()">📋 Export JSON</button>
+                    <button class="btn btn-primary" onclick="generateWeeklyReport()">📄 Report Settimanale (PDF)</button>
+                    <button class="btn btn-primary" onclick="generateMonthlyReport()">📊 Report Mensile (PDF)</button>
                     <button class="btn btn-secondary" onclick="resetMonth()">🔄 Reset Mese</button>
                 </div>
+                <p style="margin-top: 15px; opacity: 0.8; font-size: 0.95em;">
+                    💡 I report si aprono in una nuova finestra. Usa Ctrl+P o Cmd+P per salvare come PDF.
+                </p>
             </div>
         </div>
     </div>
@@ -171,6 +174,7 @@
     <script src="assets/js/data.js"></script>
     <script src="assets/js/ui.js"></script>
     <script src="assets/js/analytics.js"></script>
+    <script src="assets/js/report.js"></script>
     <script>
         let selectedPerson = null;
         let currentMonth = new Date().getMonth();
@@ -420,43 +424,6 @@
             renderTasks();
             updateLeaderboard();
             loadHistory();
-        }
-
-        function exportCSV() {
-            const data = getData();
-            let csv = 'Persona,Punti Attuali,Livello,Giorni con Errori,Penalità Totale\n';
-            
-            people.forEach(person => {
-                const level = getLevel(data[person].points);
-                const penalties = data[person].history.length;
-                const totalPenalty = data[person].history.reduce((sum, h) => sum + h.penalty, 0);
-                csv += `${person},${data[person].points},${level.name},${penalties},${totalPenalty}\n`;
-            });
-
-            csv += '\n\nDettaglio Storico:\n';
-            csv += 'Persona,Data,Task Non Completate,Penalità\n';
-            people.forEach(person => {
-                data[person].history.forEach(record => {
-                    csv += `${person},${record.date},"${record.incompleteTasks.join('; ')}",${record.penalty}\n`;
-                });
-            });
-
-            downloadFile(csv, `report_negozio_${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
-        }
-
-        function exportJSON() {
-            const data = JSON.stringify(getData(), null, 2);
-            downloadFile(data, `backup_negozio_${new Date().toISOString().split('T')[0]}.json`, 'application/json');
-        }
-
-        function downloadFile(content, filename, type) {
-            const blob = new Blob([content], { type: type });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            a.click();
-            window.URL.revokeObjectURL(url);
         }
 
         // === ANALYTICS FUNCTIONS ===
@@ -709,10 +676,12 @@
             }
         });
 
-        // Inizializza
-        updateMonthDisplay();
-        setTodayDate();
-        updateLeaderboard();
+        // Inizializza quando il DOM è pronto
+        document.addEventListener('DOMContentLoaded', function() {
+            updateMonthDisplay();
+            setTodayDate();
+            updateLeaderboard();
+        });
     </script>
 </body>
 </html>
