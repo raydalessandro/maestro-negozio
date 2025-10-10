@@ -9,7 +9,7 @@ const GITHUB_CONFIG = {
     repo: 'maestro-negozio',
     branch: 'main',
     dataFile: 'data/store-data.json',
-    token: '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'
+    token: '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'
 };
 
 // ========================================
