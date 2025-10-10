@@ -38,22 +38,34 @@
 
     <script>
         function goToManager() {
-            window.location.href = 'manager.html';
+            // Chiedi password
+            const password = prompt('🔐 Inserisci password Manager:');
+            
+            if (password === 'oakself') {
+                // Password corretta - salva in sessionStorage
+                sessionStorage.setItem('managerAuth', 'true');
+                window.location.href = 'manager.html';
+            } else if (password !== null) {
+                // Password sbagliata (null = annulla)
+                alert('❌ Password errata!');
+            }
         }
 
         function goToTeam() {
             window.location.href = 'team.html';
         }
 
-        // Inizializza dati se non esistono
-        if (!localStorage.getItem('storeData')) {
-            const initialData = {
-                'Gemy': { points: 500, history: [] },
-                'Valeria': { points: 500, history: [] },
-                'Riky': { points: 500, history: [] }
-            };
-            localStorage.setItem('storeData', JSON.stringify(initialData));
-        }
+        // Inizializza dati quando il DOM è pronto
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!localStorage.getItem('storeData')) {
+                const initialData = {
+                    'Gemy': { points: 500, history: [] },
+                    'Valeria': { points: 500, history: [] },
+                    'Riky': { points: 500, history: [] }
+                };
+                localStorage.setItem('storeData', JSON.stringify(initialData));
+            }
+        });
     </script>
 </body>
 </html>
