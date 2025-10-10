@@ -94,6 +94,74 @@ function resetMonth() {
 }
 
 // ========================================
+// BACKUP E RIPRISTINO
+// ========================================
+
+/**
+ * Download backup completo
+ */
+function downloadBackup() {
+    const data = getData();
+    if (!data) {
+        alert('❌ Nessun dato da esportare!');
+        return;
+    }
+    
+    const backup = {
+        version: '1.0',
+        exportDate: new Date().toISOString(),
+        data: data
+    };
+    
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `maestro-negozio-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    alert('✅ Backup scaricato!\n\n💡 Conserva questo file in un posto sicuro.');
+}
+
+/**
+ * Carica backup da file
+ */
+function uploadBackup() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                const backup = JSON.parse(event.target.result);
+                
+                // Verifica struttura backup
+                if (!backup.data || typeof backup.data !== 'object') {
+                    throw new Error('File backup non valido');
+                }
+                
+                if (confirm('⚠️ Sei sicuro?\n\nQuesto sovrascriverà TUTTI i dati attuali con il backup.\n\nData backup: ' + new Date(backup.exportDate).toLocaleString('it-IT'))) {
+                    saveData(backup.data);
+                    alert('✅ Backup ripristinato con successo!\n\nRicarica la pagina per vedere i dati.');
+                    location.reload();
+                }
+            } catch (e) {
+                alert('❌ Errore nel caricamento backup:\n\n' + e.message);
+            }
+        };
+        reader.readAsText(file);
+    };
+    
+    input.click();
+}
+
+// ========================================
 // GESTIONE DATE
 // ========================================
 
@@ -319,6 +387,7 @@ function loadHistory() {
 function loadAnalytics() {
     loadTeamHealthScore();
     loadAIInsights();
+    loadFeedbackInsights();
     loadTrendChart();
     loadHeatmapChart();
     loadWeekdayChart();
@@ -329,6 +398,23 @@ function loadAnalytics() {
 
 function loadTeamHealthScore() {
     const health = calculateTeamHealthScore();
+    
+    // Aggiorna Team Morale con feedback reale
+    const monthMood = getCurrentMonthMood();
+    if (monthMood) {
+        health.components.teamMorale = (monthMood / 5) * 100;
+        // Ricalcola score
+        health.score = Math.round(
+            health.components.averagePerformance * 0.4 +
+            health.components.worstPerformer * 0.3 +
+            health.components.teamMorale * 0.2 +
+            health.components.consistency * 0.1
+        );
+        health.rating = health.score >= 80 ? 'Excellent' : 
+                       health.score >= 60 ? 'Good' : 
+                       health.score >= 40 ? 'Fair' : 'Poor';
+    }
+    
     const color = health.score >= 80 ? '#00C853' : 
                  health.score >= 60 ? '#FFD600' : 
                  health.score >= 40 ? '#FF6D00' : '#D50000';
@@ -348,7 +434,7 @@ function loadTeamHealthScore() {
                 </div>
                 <div class="health-component">
                     <div class="component-value">${Math.round(health.components.teamMorale)}%</div>
-                    <div class="component-label">Team Morale</div>
+                    <div class="component-label">Team Morale ${monthMood ? '(Feedback)' : ''}</div>
                 </div>
                 <div class="health-component">
                     <div class="component-value">${Math.round(health.components.consistency)}%</div>
@@ -357,6 +443,132 @@ function loadTeamHealthScore() {
             </div>
         </div>
     `;
+}
+
+function loadFeedbackInsights() {
+    const stats = getFeedbackStats();
+    const unread = getUnreadFeedback();
+    const recent = getRecentMessages(5);
+    
+    const container = document.getElementById('feedbackInsights');
+    if (!container) return;
+    
+    let html = '<div class="card" style="margin-top: 20px;">';
+    html += '<h2>💭 Feedback Team</h2>';
+    
+    if (stats.total === 0) {
+        html += '<p style="text-align: center; opacity: 0.7; padding: 20px;">Nessun feedback ricevuto ancora.</p>';
+    } else {
+        // Stats overview
+        html += `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 20px 0;">
+                <div class="health-component">
+                    <div class="component-value">${stats.total}</div>
+                    <div class="component-label">Feedback Totali</div>
+                </div>
+                <div class="health-component">
+                    <div class="component-value" style="color: ${moodToColor(stats.avgMood)};">${stats.avgMood}/5</div>
+                    <div class="component-label">Mood Medio</div>
+                </div>
+                <div class="health-component">
+                    <div class="component-value">${unread.length}</div>
+                    <div class="component-label">Non Letti</div>
+                </div>
+                <div class="health-component">
+                    <div class="component-value">${stats.thisWeek}</div>
+                    <div class="component-label">Questa Settimana</div>
+                </div>
+            </div>
+        `;
+        
+        // Unread feedback
+        if (unread.length > 0) {
+            html += '<div style="background: rgba(255, 214, 0, 0.2); padding: 15px; border-radius: 10px; margin: 20px 0;">';
+            html += `<h3>🔔 ${unread.length} Nuovo/i Feedback</h3>`;
+            unread.slice(0, 3).forEach(f => {
+                const date = new Date(f.timestamp).toLocaleDateString('it-IT');
+                html += `
+                    <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px; margin: 10px 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <div>
+                                <span style="font-size: 1.5em;">${moodToEmoji(f.mood)}</span>
+                                <span style="margin-left: 10px; opacity: 0.8;">${moodToText(f.mood)}</span>
+                            </div>
+                            <span style="font-size: 0.9em; opacity: 0.7;">${date}</span>
+                        </div>
+                        ${f.message ? `<div style="opacity: 0.9; font-style: italic;">"${f.message}"</div>` : ''}
+                        <div style="margin-top: 8px; font-size: 0.9em; opacity: 0.7;">
+                            Categoria: ${f.category}
+                        </div>
+                    </div>
+                `;
+            });
+            html += '<button class="btn btn-secondary" onclick="markAllFeedbackRead()" style="margin-top: 10px;">✅ Segna Tutti Come Letti</button>';
+            html += '</div>';
+        }
+        
+        // Recent messages
+        if (recent.length > 0) {
+            html += '<div style="margin-top: 20px;">';
+            html += '<h3>💬 Ultimi Messaggi</h3>';
+            recent.forEach(f => {
+                const date = new Date(f.timestamp).toLocaleDateString('it-IT');
+                const readStyle = f.read ? 'opacity: 0.6;' : '';
+                html += `
+                    <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px; margin: 10px 0; ${readStyle}">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <div>
+                                <span style="font-size: 1.3em;">${moodToEmoji(f.mood)}</span>
+                                <span style="margin-left: 10px;">${moodToText(f.mood)}</span>
+                                ${!f.read ? '<span style="color: #FFD700; margin-left: 10px;">● Nuovo</span>' : ''}
+                            </div>
+                            <span style="font-size: 0.9em; opacity: 0.7;">${date}</span>
+                        </div>
+                        <div style="opacity: 0.9; font-style: italic; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 5px;">
+                            "${f.message}"
+                        </div>
+                        <div style="margin-top: 8px; font-size: 0.9em; opacity: 0.7;">
+                            📁 ${f.category}
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+        
+        // Categories breakdown
+        if (Object.keys(stats.categories).length > 0) {
+            html += '<div style="margin-top: 20px;">';
+            html += '<h3>📊 Feedback per Categoria</h3>';
+            html += '<div style="display: grid; gap: 10px; margin-top: 15px;">';
+            Object.entries(stats.categories)
+                .sort((a, b) => b[1] - a[1])
+                .forEach(([cat, count]) => {
+                    const percentage = (count / stats.total * 100).toFixed(0);
+                    html += `
+                        <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px;">
+                            <div style="display: flex; justify-content: space-between;">
+                                <strong>${cat}</strong>
+                                <span>${count} (${percentage}%)</span>
+                            </div>
+                            <div class="progress-bar" style="margin-top: 8px;">
+                                <div class="progress-fill" style="width: ${percentage}%;"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+            html += '</div></div>';
+        }
+    }
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function markAllFeedbackRead() {
+    markAllAsRead();
+    loadFeedbackInsights();
+    alert('✅ Tutti i feedback segnati come letti!');
 }
 
 function loadAIInsights() {
