@@ -858,12 +858,12 @@ function loadCorrelations() {
 // ========================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Inizializza GitHub sync
-    if (window.githubSync && window.githubSync.init) {
-        window.githubSync.init().then(() => {
-            console.log('✅ GitHub sync pronta');
+    // Inizializza Supabase sync
+    if (window.supabaseSync && window.supabaseSync.init) {
+        window.supabaseSync.init().then(() => {
+            console.log('✅ Supabase sync pronta');
         }).catch(err => {
-            console.error('❌ Errore GitHub init:', err);
+            console.error('❌ Errore Supabase init:', err);
         });
     }
     
