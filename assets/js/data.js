@@ -1,8 +1,7 @@
 // ========================================
 // GESTIONE DATI - MAESTRO DI NEGOZIO
 // ========================================
-// Questo file gestisce il salvataggio e caricamento dati
-// Per passare a Firebase, basta modificare le funzioni qui
+// Versione COMPLETA con Supabase
 
 // ========================================
 // CONFIGURAZIONE STORAGE
@@ -126,7 +125,7 @@ function initializeData() {
 }
 
 // ========================================
-// FUNZIONI CRUD - localStorage
+// FUNZIONI CRUD
 // ========================================
 
 /**
@@ -144,7 +143,7 @@ function getData() {
 }
 
 /**
- * Salva tutti i dati
+ * Salva tutti i dati (con sincronizzazione Supabase)
  * @param {object} data - Dati da salvare
  * @returns {boolean} True se successo
  */
@@ -156,34 +155,37 @@ async function saveData(data) {
             return false;
         }
         
-        // PRIORITÀ: Salva su GitHub
-        if (window.githubSync && typeof window.githubSync.save === 'function') {
-            console.log('💾 Salvataggio su GitHub...');
-            const success = await window.githubSync.save(data);
+        // PRIORITÀ: Salva su Supabase
+        if (window.supabaseSync && typeof window.supabaseSync.save === 'function') {
+            console.log('💾 Salvataggio su Supabase...');
+            const success = await window.supabaseSync.save(data);
             
             if (success) {
-                console.log('✅ Dati salvati su GitHub');
+                console.log('✅ Dati salvati su Supabase');
                 // Salva anche in localStorage come cache
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
                 localStorage.setItem(LAST_SAVE_KEY, new Date().toISOString());
+                saveBackup(data);
                 return true;
             } else {
-                console.error('❌ Errore salvataggio GitHub!');
-                alert('⚠️ ERRORE SALVATAGGIO!\n\nI dati NON sono stati salvati su GitHub.\nVerifica connessione internet e configurazione GitHub.\n\nI dati rimarranno solo su questo browser.');
+                console.error('❌ Errore salvataggio Supabase!');
+                alert('⚠️ ERRORE SALVATAGGIO!\n\nI dati NON sono stati salvati su Supabase.\nVerifica connessione internet e configurazione Supabase.\n\nI dati rimarranno solo su questo browser.');
                 
                 // Fallback localStorage
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
                 localStorage.setItem(LAST_SAVE_KEY, new Date().toISOString());
+                saveBackup(data);
                 return false;
             }
         } else {
-            // GitHub non configurato
-            console.warn('⚠️ GitHub Storage non configurato!');
-            alert('⚠️ ATTENZIONE!\n\nGitHub Storage NON è configurato.\nI dati verranno salvati SOLO su questo browser.\n\nConfigura GitHub seguendo SETUP_GITHUB.md');
+            // Supabase non configurato
+            console.warn('⚠️ Supabase Storage non configurato!');
+            alert('⚠️ ATTENZIONE!\n\nSupabase Storage NON è configurato.\nI dati verranno salvati SOLO su questo browser.\n\nConfigura Supabase seguendo le istruzioni.');
             
             // Fallback localStorage
             localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
             localStorage.setItem(LAST_SAVE_KEY, new Date().toISOString());
+            saveBackup(data);
             return false;
         }
         
@@ -210,12 +212,12 @@ function getPersonData(personName) {
  * @param {object} personData - Nuovi dati
  * @returns {boolean} True se successo
  */
-function updatePersonData(personName, personData) {
+async function updatePersonData(personName, personData) {
     const data = getData();
     if (!data) return false;
     
     data[personName] = personData;
-    return saveData(data);
+    return await saveData(data);
 }
 
 /**
@@ -226,7 +228,7 @@ function updatePersonData(personName, personData) {
  * @param {array} incompleteTasks - Array di task non completate
  * @returns {boolean} True se successo
  */
-function addHistoryRecord(personName, date, penalty, incompleteTasks) {
+async function addHistoryRecord(personName, date, penalty, incompleteTasks) {
     const data = getData();
     if (!data) return false;
 
@@ -246,7 +248,7 @@ function addHistoryRecord(personName, date, penalty, incompleteTasks) {
     data[personName].points = INITIAL_POINTS - 
         data[personName].history.reduce((sum, h) => sum + h.penalty, 0);
 
-    return saveData(data);
+    return await saveData(data);
 }
 
 /**
@@ -298,7 +300,7 @@ function getHistory(personName = null, fromDate = null, toDate = null) {
  * Reset completo del mese
  * @returns {boolean} True se successo
  */
-function resetMonth() {
+async function resetMonth() {
     const data = getData();
     if (!data) return false;
 
@@ -307,7 +309,7 @@ function resetMonth() {
         data[person].history = [];
     });
 
-    return saveData(data);
+    return await saveData(data);
 }
 
 // ========================================
@@ -350,12 +352,14 @@ function getAggregateStats() {
         sum + data[p].points, 0
     ) / people.length;
 
+    const leaderboard = getLeaderboard();
+
     return {
         totalPenalties,
         totalDaysWithErrors,
         averagePoints,
-        topPerformer: getLeaderboard()[0],
-        needsImprovement: getLeaderboard()[people.length - 1]
+        topPerformer: leaderboard[0],
+        needsImprovement: leaderboard[people.length - 1]
     };
 }
 
@@ -403,48 +407,84 @@ function exportToJSON() {
  * @param {string} jsonString - Stringa JSON
  * @returns {boolean} True se successo
  */
-function importFromJSON(jsonString) {
+async function importFromJSON(jsonString) {
     try {
         const data = JSON.parse(jsonString);
-        return saveData(data);
+        if (!verifyDataIntegrity(data)) {
+            throw new Error('Dati non validi o corrotti');
+        }
+        return await saveData(data);
     } catch (error) {
         console.error('❌ Errore nell\'import:', error);
         return false;
     }
 }
 
+/**
+ * Download backup completo
+ */
+function downloadBackupFile() {
+    const data = getData();
+    if (!data) {
+        alert('❌ Nessun dato da esportare!');
+        return;
+    }
+    
+    const backup = {
+        version: STORAGE_VERSION,
+        exportDate: new Date().toISOString(),
+        data: data
+    };
+    
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `maestro-negozio-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    console.log('✅ Backup scaricato');
+}
+
+/**
+ * Carica backup da file
+ */
+function uploadBackupFile() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    
+    input.onchange = async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = async function(event) {
+            try {
+                const backup = JSON.parse(event.target.result);
+                
+                // Verifica struttura backup
+                if (!backup.data || !verifyDataIntegrity(backup.data)) {
+                    throw new Error('File backup non valido');
+                }
+                
+                if (confirm('⚠️ Sei sicuro?\n\nQuesto sovrascriverà TUTTI i dati attuali con il backup.\n\nData backup: ' + new Date(backup.exportDate).toLocaleString('it-IT'))) {
+                    await saveData(backup.data);
+                    alert('✅ Backup ripristinato con successo!\n\nRicarica la pagina per vedere i dati.');
+                    location.reload();
+                }
+            } catch (e) {
+                alert('❌ Errore nel caricamento backup:\n\n' + e.message);
+            }
+        };
+        reader.readAsText(file);
+    };
+    
+    input.click();
+}
+
 // ========================================
 // AUTO-INIZIALIZZAZIONE
 // ========================================
 initializeData();
-
-// ========================================
-// ESEMPIO PER FIREBASE (da decommentare)
-// ========================================
-/*
-// Importa Firebase
-import { initializeApp } from "firebase/app";
-import { getDatabase, ref, set, get, update } from "firebase/database";
-
-const app = initializeApp(FIREBASE_CONFIG);
-const db = getDatabase(app);
-
-// Sostituisci le funzioni sopra con queste:
-
-async function getData() {
-    const snapshot = await get(ref(db, 'storeData'));
-    return snapshot.val();
-}
-
-async function saveData(data) {
-    await set(ref(db, 'storeData'), data);
-    return true;
-}
-
-async function updatePersonData(personName, personData) {
-    await update(ref(db, `storeData/${personName}`), personData);
-    return true;
-}
-
-// ... e così via per le altre funzioni
-*/
