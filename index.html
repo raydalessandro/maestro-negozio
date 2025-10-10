@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maestro di Negozio</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="landing-page">
+            <div class="header">
+                <h1>🏆 Maestro di Negozio</h1>
+                <p class="subtitle">Sistema di Monitoraggio e Gamification</p>
+            </div>
+
+            <div class="role-selector">
+                <div class="role-card" onclick="goToManager()">
+                    <div class="role-icon">👨‍💼</div>
+                    <h2>Manager</h2>
+                    <p>Accesso completo al sistema di monitoraggio</p>
+                    <button class="btn btn-primary">Accedi</button>
+                </div>
+
+                <div class="role-card" onclick="goToTeam()">
+                    <div class="role-icon">🏆</div>
+                    <h2>Team</h2>
+                    <p>Visualizza la classifica e i tuoi progressi</p>
+                    <button class="btn btn-secondary">Accedi</button>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p>Made with ❤️ for store excellence</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function goToManager() {
+            window.location.href = 'manager.html';
+        }
+
+        function goToTeam() {
+            window.location.href = 'team.html';
+        }
+
+        // Inizializza dati se non esistono
+        if (!localStorage.getItem('storeData')) {
+            const initialData = {
+                'Gemy': { points: 500, history: [] },
+                'Valeria': { points: 500, history: [] },
+                'Riky': { points: 500, history: [] }
+            };
+            localStorage.setItem('storeData', JSON.stringify(initialData));
+        }
+    </script>
+</body>
+</html>
