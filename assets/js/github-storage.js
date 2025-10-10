@@ -1,110 +1,109 @@
 // ========================================
 // GITHUB STORAGE - MAESTRO DI NEGOZIO
 // ========================================
-// Versione con CORS fix e debug esteso
+// Versione SEMPLIFICATA per repository PUBBLICA
+// NON serve token per leggere, serve solo per scrivere
 
 const GITHUB_CONFIG = {
     owner: 'raydalessandro',
     repo: 'maestro-negozio',
     branch: 'main',
     dataFile: 'data/store-data.json',
-    token: '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' // Sostituisci con il nuovo token
+    token: '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'
 };
 
 // ========================================
-// API GITHUB (con debug esteso)
+// API GITHUB
 // ========================================
 
 /**
- * Carica dati da GitHub
+ * Carica dati da GitHub (NO AUTH per repo pubbliche)
  */
 async function loadFromGitHub() {
     try {
         console.log('📥 Caricamento dati da GitHub...');
-        console.log('🔗 URL:', `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.dataFile}`);
         
-        const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.dataFile}?ref=${GITHUB_CONFIG.branch}`;
+        // URL diretto al file RAW (più affidabile)
+        const rawUrl = `https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${GITHUB_CONFIG.dataFile}`;
         
-        const headers = {
-            'Accept': 'application/vnd.github.v3+json',
-            'X-GitHub-Api-Version': '2022-11-28'
-        };
+        console.log('🔗 URL:', rawUrl);
         
-        if (GITHUB_CONFIG.token) {
-            headers['Authorization'] = `Bearer ${GITHUB_CONFIG.token}`;
-            console.log('🔐 Token presente:', GITHUB_CONFIG.token.substring(0, 10) + '...');
-        } else {
-            console.warn('⚠️ Nessun token configurato!');
-        }
-        
-        console.log('📤 Headers:', JSON.stringify(headers, null, 2));
-        
-        const response = await fetch(url, { 
+        // Prova prima con URL RAW (no auth needed)
+        let response = await fetch(rawUrl, {
             method: 'GET',
-            headers: headers,
-            mode: 'cors',
             cache: 'no-cache'
         });
         
-        console.log('📥 Response status:', response.status);
-        console.log('📥 Response headers:', [...response.headers.entries()]);
+        console.log('📥 Response status (RAW):', response.status);
         
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('❌ Response body:', errorText);
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Dati caricati da GitHub (RAW URL)');
+            console.log('📊 Dati:', Object.keys(data));
             
-            if (response.status === 404) {
-                console.log('📝 File dati non trovato su GitHub, verrà creato al primo salvataggio');
-                return null;
-            }
+            // Ottieni SHA per aggiornamenti futuri
+            const apiUrl = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.dataFile}?ref=${GITHUB_CONFIG.branch}`;
             
-            if (response.status === 401) {
-                console.error('❌ 401 Unauthorized - Token non valido o mancante');
-                console.error('Possibili cause:');
-                console.error('1. Token scaduto o revocato');
-                console.error('2. Token senza permessi sufficienti (serve scope "repo" o "Contents: Read and write")');
-                console.error('3. Token per repository sbagliata');
-                
-                // Verifica token
-                console.log('🔍 Verifica token...');
-                const testResponse = await fetch('https://api.github.com/user', {
+            try {
+                const apiResponse = await fetch(apiUrl, {
                     headers: {
-                        'Authorization': `Bearer ${GITHUB_CONFIG.token}`,
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
                 
-                if (testResponse.ok) {
-                    const user = await testResponse.json();
-                    console.log('✅ Token valido per utente:', user.login);
-                    console.error('❌ Ma NON ha permessi su questa repository!');
-                    console.error('Verifica che il token sia per raydalessandro e abbia scope "repo"');
-                } else {
-                    console.error('❌ Token completamente non valido');
+                if (apiResponse.ok) {
+                    const apiResult = await apiResponse.json();
+                    return {
+                        data: data,
+                        sha: apiResult.sha
+                    };
                 }
+            } catch (e) {
+                console.warn('⚠️ Non riesco a ottenere SHA, ma dati OK');
             }
             
-            if (response.status === 403) {
-                console.error('❌ 403 Forbidden - Rate limit o permessi insufficienti');
-                const remaining = response.headers.get('X-RateLimit-Remaining');
-                const reset = response.headers.get('X-RateLimit-Reset');
-                console.log('Rate limit remaining:', remaining);
-                if (reset) {
-                    const resetDate = new Date(parseInt(reset) * 1000);
-                    console.log('Rate limit reset:', resetDate.toLocaleString('it-IT'));
-                }
+            return {
+                data: data,
+                sha: null
+            };
+        }
+        
+        // Se RAW fallisce, prova API (con auth se disponibile)
+        console.log('⚠️ RAW URL fallito, provo API...');
+        
+        const apiUrl = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.dataFile}?ref=${GITHUB_CONFIG.branch}`;
+        
+        const headers = {
+            'Accept': 'application/vnd.github.v3+json'
+        };
+        
+        // Aggiungi auth solo se disponibile
+        if (GITHUB_CONFIG.token) {
+            headers['Authorization'] = `Bearer ${GITHUB_CONFIG.token}`;
+            console.log('🔐 Uso token per API');
+        }
+        
+        response = await fetch(apiUrl, { headers });
+        
+        console.log('📥 Response status (API):', response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ GitHub API error:', response.status, errorText);
+            
+            if (response.status === 404) {
+                console.log('📝 File non trovato');
+                return null;
             }
             
-            throw new Error(`GitHub API error: ${response.status} - ${errorText}`);
+            throw new Error(`GitHub API error: ${response.status}`);
         }
         
         const result = await response.json();
-        
-        // Decodifica contenuto Base64
         const content = atob(result.content.replace(/\n/g, ''));
         const data = JSON.parse(content);
         
-        console.log('✅ Dati caricati da GitHub');
+        console.log('✅ Dati caricati da GitHub (API)');
         console.log('📊 SHA:', result.sha);
         
         return {
@@ -114,21 +113,23 @@ async function loadFromGitHub() {
         
     } catch (error) {
         console.error('❌ Errore caricamento da GitHub:', error);
-        console.error('Stack trace:', error.stack);
         return null;
     }
 }
 
 /**
- * Salva dati su GitHub
+ * Salva dati su GitHub (SERVE TOKEN)
  */
 async function saveToGitHub(data, sha = null) {
     try {
         console.log('📤 Salvataggio dati su GitHub...');
         
+        if (!GITHUB_CONFIG.token) {
+            throw new Error('Token GitHub richiesto per salvare');
+        }
+        
         const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.dataFile}`;
         
-        // Prepara contenuto
         const content = btoa(JSON.stringify(data, null, 2));
         
         const body = {
@@ -139,7 +140,7 @@ async function saveToGitHub(data, sha = null) {
         
         if (sha) {
             body.sha = sha;
-            console.log('📝 Aggiornamento file esistente (SHA:', sha.substring(0, 7) + ')');
+            console.log('📝 Aggiornamento file esistente');
         } else {
             console.log('📝 Creazione nuovo file');
         }
@@ -147,53 +148,42 @@ async function saveToGitHub(data, sha = null) {
         const headers = {
             'Accept': 'application/vnd.github.v3+json',
             'Content-Type': 'application/json',
-            'X-GitHub-Api-Version': '2022-11-28'
+            'Authorization': `Bearer ${GITHUB_CONFIG.token}`
         };
-        
-        if (GITHUB_CONFIG.token) {
-            headers['Authorization'] = `Bearer ${GITHUB_CONFIG.token}`;
-        }
-        
-        console.log('📤 Request body:', JSON.stringify(body, null, 2).substring(0, 200) + '...');
         
         const response = await fetch(url, {
             method: 'PUT',
             headers: headers,
-            body: JSON.stringify(body),
-            mode: 'cors',
-            cache: 'no-cache'
+            body: JSON.stringify(body)
         });
         
         console.log('📥 Response status:', response.status);
         
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('❌ Response body:', errorText);
+            console.error('❌ GitHub API error:', errorText);
             
-            if (response.status === 401) {
-                console.error('❌ Token non valido per scrittura');
-                console.error('Verifica che il token abbia scope "repo" o "Contents: Read and write"');
+            if (response.status === 401 || response.status === 403) {
+                throw new Error('Token non valido o permessi insufficienti');
             }
             
             if (response.status === 409) {
-                console.error('❌ Conflitto: il file è stato modificato da qualcun altro');
-                console.error('Ricarica la pagina per ottenere la versione più recente');
+                throw new Error('Conflitto: file modificato da qualcun altro');
             }
             
-            throw new Error(`GitHub API error: ${response.status} - ${errorText}`);
+            throw new Error(`GitHub API error: ${response.status}`);
         }
         
         const result = await response.json();
         
         console.log('✅ Dati salvati su GitHub');
-        console.log('📝 Nuovo SHA:', result.content.sha.substring(0, 7));
+        console.log('📝 Commit:', result.commit.sha.substring(0, 7));
         
         return result.content.sha;
         
     } catch (error) {
         console.error('❌ Errore salvataggio su GitHub:', error);
-        console.error('Stack trace:', error.stack);
-        return null;
+        throw error;
     }
 }
 
@@ -206,66 +196,96 @@ let syncEnabled = false;
 
 async function initGitHubSync() {
     console.log('🔄 Inizializzazione sincronizzazione GitHub...');
-    console.log('📋 Config:', {
-        owner: GITHUB_CONFIG.owner,
-        repo: GITHUB_CONFIG.repo,
-        branch: GITHUB_CONFIG.branch,
-        file: GITHUB_CONFIG.dataFile,
-        hasToken: !!GITHUB_CONFIG.token
-    });
     
-    const githubData = await loadFromGitHub();
-    
-    if (githubData) {
-        currentSha = githubData.sha;
+    try {
+        const githubData = await loadFromGitHub();
         
-        const localData = localStorage.getItem('storeData');
-        
-        if (localData) {
-            const local = JSON.parse(localData);
-            const localTimestamp = localStorage.getItem('lastSaveTimestamp');
+        if (githubData && githubData.data) {
+            currentSha = githubData.sha;
             
-            if (localTimestamp && new Date(localTimestamp) > new Date()) {
-                console.log('📱 localStorage più recente, sincronizzazione con GitHub...');
-                await saveToGitHub(local, currentSha);
-            } else {
-                console.log('☁️ GitHub più recente, aggiornamento localStorage...');
-                localStorage.setItem('storeData', JSON.stringify(githubData.data));
-            }
-        } else {
-            console.log('☁️ Primo caricamento da GitHub');
+            console.log('✅ Dati GitHub caricati:', Object.keys(githubData.data));
+            
+            // Salva in localStorage come cache
             localStorage.setItem('storeData', JSON.stringify(githubData.data));
+            localStorage.setItem('lastSaveTimestamp', new Date().toISOString());
+            
+            syncEnabled = true;
+            console.log('✅ Sincronizzazione GitHub attiva');
+        } else {
+            console.warn('⚠️ Nessun dato su GitHub, inizializzo locale');
+            
+            // Inizializza dati di default
+            const defaultData = {
+                "Gemy": { "points": 500, "history": [] },
+                "Valeria": { "points": 500, "history": [] },
+                "Riky": { "points": 500, "history": [] }
+            };
+            
+            localStorage.setItem('storeData', JSON.stringify(defaultData));
+            
+            // Prova a salvare su GitHub
+            if (GITHUB_CONFIG.token) {
+                console.log('📤 Salvo dati di default su GitHub...');
+                const sha = await saveToGitHub(defaultData, null);
+                if (sha) {
+                    currentSha = sha;
+                    syncEnabled = true;
+                    console.log('✅ Dati iniziali salvati su GitHub');
+                }
+            } else {
+                console.warn('⚠️ Nessun token, solo localStorage');
+                syncEnabled = false;
+            }
+        }
+    } catch (error) {
+        console.error('❌ Errore inizializzazione GitHub:', error);
+        
+        // Fallback: usa localStorage o inizializza
+        let localData = localStorage.getItem('storeData');
+        if (!localData) {
+            console.log('📦 Inizializzo dati di default in localStorage');
+            const defaultData = {
+                "Gemy": { "points": 500, "history": [] },
+                "Valeria": { "points": 500, "history": [] },
+                "Riky": { "points": 500, "history": [] }
+            };
+            localStorage.setItem('storeData', JSON.stringify(defaultData));
+        } else {
+            console.log('📱 Uso dati da localStorage');
         }
         
-        syncEnabled = true;
-        console.log('✅ Sincronizzazione GitHub attiva');
-    } else {
-        console.log('⚠️ Sincronizzazione GitHub non disponibile, uso localStorage');
         syncEnabled = false;
     }
 }
 
 async function saveDataSync(data) {
-    if (!syncEnabled) {
-        console.warn('⚠️ GitHub sync non attiva');
+    // SEMPRE salva in localStorage (cache)
+    localStorage.setItem('storeData', JSON.stringify(data));
+    localStorage.setItem('lastSaveTimestamp', new Date().toISOString());
+    
+    if (!syncEnabled || !GITHUB_CONFIG.token) {
+        console.warn('⚠️ GitHub sync non attiva, salvato solo in localStorage');
         return false;
     }
     
-    const newSha = await saveToGitHub(data, currentSha);
-    if (newSha) {
-        currentSha = newSha;
-        localStorage.setItem('storeData', JSON.stringify(data));
-        localStorage.setItem('lastSaveTimestamp', new Date().toISOString());
-        return true;
-    } else {
-        console.error('❌ Fallimento salvataggio GitHub');
-        return false;
+    try {
+        const newSha = await saveToGitHub(data, currentSha);
+        if (newSha) {
+            currentSha = newSha;
+            console.log('✅ Salvato su GitHub + localStorage');
+            return true;
+        }
+    } catch (error) {
+        console.error('❌ Errore salvataggio GitHub:', error);
     }
+    
+    console.warn('⚠️ Salvato solo in localStorage (GitHub fallito)');
+    return false;
 }
 
 function startAutoSync(intervalMinutes = 5) {
     if (!syncEnabled) {
-        console.log('⚠️ Auto-sync disabilitato, GitHub non configurato');
+        console.log('⚠️ Auto-sync disabilitato');
         return;
     }
     
@@ -273,31 +293,28 @@ function startAutoSync(intervalMinutes = 5) {
     
     setInterval(async () => {
         console.log('🔄 Sincronizzazione automatica...');
-        const data = getData();
-        if (data) {
+        const dataStr = localStorage.getItem('storeData');
+        if (dataStr) {
+            const data = JSON.parse(dataStr);
             await saveDataSync(data);
         }
     }, intervalMinutes * 60 * 1000);
 }
 
 async function forceSyncNow() {
-    if (!syncEnabled) {
-        alert('⚠️ Sincronizzazione GitHub non attiva.\n\nConfigura GitHub in github-storage.js');
-        return;
-    }
-    
-    const data = getData();
-    if (!data) {
+    const dataStr = localStorage.getItem('storeData');
+    if (!dataStr) {
         alert('❌ Nessun dato da sincronizzare');
         return;
     }
     
+    const data = JSON.parse(dataStr);
     const success = await saveDataSync(data);
     
     if (success) {
         alert('✅ Dati sincronizzati con GitHub!');
     } else {
-        alert('❌ Errore sincronizzazione.\n\nVerifica configurazione GitHub.');
+        alert('⚠️ Dati salvati solo in localStorage.\n\nGitHub sync non disponibile.');
     }
 }
 
@@ -307,19 +324,15 @@ function checkSyncStatus() {
     console.log('Owner:', GITHUB_CONFIG.owner);
     console.log('Repo:', GITHUB_CONFIG.repo);
     console.log('File:', GITHUB_CONFIG.dataFile);
-    console.log('Branch:', GITHUB_CONFIG.branch);
     console.log('SHA corrente:', currentSha);
     console.log('Token configurato:', !!GITHUB_CONFIG.token);
     
-    if (GITHUB_CONFIG.token) {
-        console.log('Token preview:', GITHUB_CONFIG.token.substring(0, 10) + '...');
-    }
+    const localData = localStorage.getItem('storeData');
+    console.log('localStorage:', localData ? 'OK' : 'VUOTO');
     
-    if (!syncEnabled) {
-        console.log('\n💡 Per risolvere:');
-        console.log('1. Verifica che il token sia valido');
-        console.log('2. Verifica che il token abbia scope "repo"');
-        console.log('3. Verifica owner/repo/branch corretti');
+    if (localData) {
+        const data = JSON.parse(localData);
+        console.log('Persone in localStorage:', Object.keys(data));
     }
 }
 
