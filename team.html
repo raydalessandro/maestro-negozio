@@ -228,6 +228,12 @@ Ricorda: questo messaggio è completamente anonimo!"
         // Aspetta che il DOM sia caricato
         document.addEventListener('DOMContentLoaded', function() {
             // Aggiorna classifica all'avvio
+            // Inizializza GitHub sync
+    if (window.githubSync && window.githubSync.init) {
+        window.githubSync.init().then(() => {
+            console.log('✅ GitHub sync team attiva');
+        });
+    }
             updateLeaderboard();
             updateTeamMoodDisplay();
 
