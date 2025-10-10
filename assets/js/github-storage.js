@@ -1,22 +1,18 @@
 // ========================================
 // GITHUB STORAGE - MAESTRO DI NEGOZIO
 // ========================================
-// Salva e carica dati da GitHub repository
-
-// ========================================
-// CONFIGURAZIONE GITHUB
-// ========================================
+// FIXED VERSION - Usa Bearer token format
 
 const GITHUB_CONFIG = {
-    owner: 'raydalessandro',           // Cambia con il tuo username GitHub
-    repo: 'maestro-negozio',         // Nome della tua repository
-    branch: 'main',                  // O 'master' se usi quello
-    dataFile: 'data/store-data.json', // Path del file dati nella repo
-    token: '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' // Token GitHub (opzionale per pubbliche)
+    owner: 'raydalessandro',
+    repo: 'maestro-negozio',
+    branch: 'main',
+    dataFile: 'data/store-data.json',
+    token: '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'
 };
 
 // ========================================
-// API GITHUB
+// API GITHUB (FIXED)
 // ========================================
 
 /**
@@ -32,8 +28,9 @@ async function loadFromGitHub() {
             'Accept': 'application/vnd.github.v3+json'
         };
         
+        // FIX: Usa Bearer invece di token
         if (GITHUB_CONFIG.token) {
-            headers['Authorization'] = `token ${GITHUB_CONFIG.token}`;
+            headers['Authorization'] = `Bearer ${GITHUB_CONFIG.token}`;
         }
         
         const response = await fetch(url, { headers });
@@ -42,6 +39,11 @@ async function loadFromGitHub() {
             if (response.status === 404) {
                 console.log('📝 File dati non trovato su GitHub, verrà creato al primo salvataggio');
                 return null;
+            }
+            if (response.status === 401) {
+                console.error('❌ Token GitHub non valido o scaduto');
+                const errorText = await response.text();
+                console.error('Dettagli errore:', errorText);
             }
             throw new Error(`GitHub API error: ${response.status}`);
         }
@@ -57,7 +59,7 @@ async function loadFromGitHub() {
         
         return {
             data: data,
-            sha: result.sha // Serve per aggiornare il file
+            sha: result.sha
         };
         
     } catch (error) {
@@ -94,8 +96,9 @@ async function saveToGitHub(data, sha = null) {
             'Content-Type': 'application/json'
         };
         
+        // FIX: Usa Bearer invece di token
         if (GITHUB_CONFIG.token) {
-            headers['Authorization'] = `token ${GITHUB_CONFIG.token}`;
+            headers['Authorization'] = `Bearer ${GITHUB_CONFIG.token}`;
         }
         
         const response = await fetch(url, {
@@ -105,8 +108,13 @@ async function saveToGitHub(data, sha = null) {
         });
         
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(`GitHub API error: ${error.message}`);
+            if (response.status === 401) {
+                console.error('❌ Token GitHub non valido');
+                const errorText = await response.text();
+                console.error('Dettagli errore:', errorText);
+            }
+            const error = await response.json().catch(() => ({ message: 'Unknown error' }));
+            throw new Error(`GitHub API error: ${response.status} - ${error.message}`);
         }
         
         const result = await response.json();
