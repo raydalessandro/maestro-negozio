@@ -173,23 +173,26 @@ async function initGitHubSync() {
  * Salva dati con sincronizzazione
  */
 async function saveDataSync(data) {
-    // Salva sempre in localStorage per fallback
-    localStorage.setItem('storeData', JSON.stringify(data));
-    localStorage.setItem('lastSaveTimestamp', new Date().toISOString());
-    
-    // Se sync attiva, salva anche su GitHub
-    if (syncEnabled) {
-        const newSha = await saveToGitHub(data, currentSha);
-        if (newSha) {
-            currentSha = newSha;
-            return true;
-        } else {
-            console.warn('⚠️ Fallback a localStorage, GitHub non disponibile');
-            return false;
-        }
+    // Se sync NON attiva, ritorna false
+    if (!syncEnabled) {
+        console.warn('⚠️ GitHub sync non attiva');
+        return false;
     }
     
-    return true;
+    // Salva su GitHub
+    const newSha = await saveToGitHub(data, currentSha);
+    if (newSha) {
+        currentSha = newSha;
+        
+        // Solo dopo successo GitHub, salva in localStorage come cache
+        localStorage.setItem('storeData', JSON.stringify(data));
+        localStorage.setItem('lastSaveTimestamp', new Date().toISOString());
+        
+        return true;
+    } else {
+        console.error('❌ Fallimento salvataggio GitHub');
+        return false;
+    }
 }
 
 /**
