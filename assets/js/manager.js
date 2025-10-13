@@ -605,173 +605,372 @@ function loadAIInsights() {
 
 function loadTrendChart() {
     const ctx = document.getElementById('trendChart');
-    if (charts.trend) charts.trend.destroy();
+    if (!ctx) {
+        console.warn('⚠️ Canvas trendChart non trovato');
+        return;
+    }
     
-    const datasets = people.map((person, idx) => {
-        const trend = calculateTrend(person, 30);
-        const colors = ['#667eea', '#f5576c', '#FFD700'];
+    if (charts.trend) {
+        charts.trend.destroy();
+    }
+    
+    try {
+        // Verifica dati sufficienti
+        const testTrend = calculateTrend(people[0], 30);
+        if (!testTrend.dailyPoints || testTrend.dailyPoints.length === 0) {
+            ctx.parentElement.innerHTML = '<p style="text-align:center; padding:40px; opacity:0.7;">📊 Nessun dato ancora. Aggiungi penalità per vedere i grafici!</p>';
+            return;
+        }
         
-        return {
-            label: person,
-            data: trend.dailyPoints.map(d => d.points),
-            borderColor: colors[idx],
-            backgroundColor: colors[idx] + '33',
-            tension: 0.4
-        };
-    });
-    
-    // Usa le date come labels
-    const labels = calculateTrend(people[0], 30).dailyPoints.map(d => 
-        new Date(d.date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })
-    );
-    
-    charts.trend = new Chart(ctx, {
-        type: 'line',
-        data: { 
-            labels: labels,
-            datasets: datasets 
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: { 
-                    beginAtZero: false, 
-                    max: 500,
-                    min: 0
-                }
+        // Prepara datasets
+        const datasets = people.map((person, idx) => {
+            const trend = calculateTrend(person, 30);
+            const colors = ['#667eea', '#f5576c', '#FFD700'];
+            
+            return {
+                label: person,
+                data: trend.dailyPoints.map(d => d.points),
+                borderColor: colors[idx],
+                backgroundColor: colors[idx] + '33',
+                tension: 0.4,
+                fill: false,
+                borderWidth: 2,
+                pointRadius: 3,
+                pointHoverRadius: 5
+            };
+        });
+        
+        // Labels come stringhe semplici (no date objects)
+        const labels = calculateTrend(people[0], 30).dailyPoints.map(d => {
+            const date = new Date(d.date);
+            return `${date.getDate()}/${date.getMonth() + 1}`;
+        });
+        
+        // Crea grafico
+        charts.trend = new Chart(ctx, {
+            type: 'line',
+            data: { 
+                labels: labels,
+                datasets: datasets 
             },
-            plugins: {
-                legend: {
-                    labels: {
-                        color: '#fff'
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                scales: {
+                    y: { 
+                        beginAtZero: false, 
+                        max: 500,
+                        min: 0,
+                        ticks: {
+                            color: '#fff',
+                            stepSize: 100
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: '#fff',
+                            maxRotation: 45,
+                            minRotation: 45,
+                            autoSkip: true,
+                            maxTicksLimit: 10
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#fff',
+                            font: {
+                                size: 14
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y + ' punti';
+                            }
+                        }
                     }
                 }
             }
-        }
-    });
+        });
+        
+        console.log('✅ Grafico trend caricato con', labels.length, 'punti');
+        
+    } catch (error) {
+        console.error('❌ Errore caricamento grafico trend:', error);
+        ctx.parentElement.innerHTML = `
+            <div style="text-align:center; padding:40px; color:#ff6b6b;">
+                <div style="font-size:2em; margin-bottom:10px;">⚠️</div>
+                <div>Errore caricamento grafico</div>
+                <div style="font-size:0.9em; opacity:0.7; margin-top:10px;">
+                    ${error.message}
+                </div>
+                <button class="btn btn-secondary" onclick="location.reload()" style="margin-top:20px;">
+                    🔄 Ricarica Pagina
+                </button>
+            </div>
+        `;
+    }
 }
 
 function loadHeatmapChart() {
     const ctx = document.getElementById('heatmapChart');
-    if (charts.heatmap) charts.heatmap.destroy();
+    if (!ctx) {
+        console.warn('⚠️ Canvas heatmapChart non trovato');
+        return;
+    }
     
-    const heatmap = generateTaskHeatmap().slice(0, 10);
+    if (charts.heatmap) {
+        charts.heatmap.destroy();
+    }
     
-    charts.heatmap = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: heatmap.map(t => t.task.substring(0, 30) + (t.task.length > 30 ? '...' : '')),
-            datasets: [{
-                label: 'Errori',
-                data: heatmap.map(t => t.errorCount),
-                backgroundColor: 'rgba(245, 87, 108, 0.7)'
-            }]
-        },
-        options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    labels: {
-                        color: '#fff'
+    try {
+        const heatmap = generateTaskHeatmap().slice(0, 10);
+        
+        if (heatmap.length === 0) {
+            ctx.parentElement.innerHTML = '<p style="text-align:center; padding:40px; opacity:0.7;">✅ Nessuna task problematica!</p>';
+            return;
+        }
+        
+        charts.heatmap = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: heatmap.map(t => {
+                    const name = t.task;
+                    return name.length > 30 ? name.substring(0, 30) + '...' : name;
+                }),
+                datasets: [{
+                    label: 'Errori',
+                    data: heatmap.map(t => t.errorCount),
+                    backgroundColor: 'rgba(245, 87, 108, 0.7)',
+                    borderColor: 'rgba(245, 87, 108, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        callbacks: {
+                            title: function(items) {
+                                const index = items[0].dataIndex;
+                                return heatmap[index].task;
+                            },
+                            label: function(context) {
+                                return context.parsed.x + ' errori';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { 
+                            color: '#fff',
+                            stepSize: 1
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    },
+                    y: {
+                        ticks: { 
+                            color: '#fff',
+                            font: {
+                                size: 11
+                            }
+                        },
+                        grid: {
+                            display: false
+                        }
                     }
                 }
-            },
-            scales: {
-                x: {
-                    ticks: { color: '#fff' }
-                },
-                y: {
-                    ticks: { color: '#fff' }
-                }
             }
-        }
-    });
+        });
+        
+        console.log('✅ Grafico heatmap caricato con', heatmap.length, 'task');
+        
+    } catch (error) {
+        console.error('❌ Errore caricamento grafico heatmap:', error);
+        ctx.parentElement.innerHTML = '<p style="text-align:center; color:#ff6b6b; padding:40px;">⚠️ Errore caricamento grafico</p>';
+    }
 }
 
 function loadWeekdayChart() {
     const ctx = document.getElementById('weekdayChart');
-    if (charts.weekday) charts.weekday.destroy();
+    if (!ctx) {
+        console.warn('⚠️ Canvas weekdayChart non trovato');
+        return;
+    }
     
-    const weekdayData = analyzeWeekdayPatterns();
+    if (charts.weekday) {
+        charts.weekday.destroy();
+    }
     
-    charts.weekday = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: weekdayData.map(d => d.name),
-            datasets: [{
-                label: 'Errori',
-                data: weekdayData.map(d => d.count),
-                backgroundColor: 'rgba(102, 126, 234, 0.7)'
-            }]
-        },
-        options: { 
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    labels: {
-                        color: '#fff'
+    try {
+        const weekdayData = analyzeWeekdayPatterns();
+        
+        if (weekdayData.every(d => d.count === 0)) {
+            ctx.parentElement.innerHTML = '<p style="text-align:center; padding:40px; opacity:0.7;">📅 Nessun dato ancora</p>';
+            return;
+        }
+        
+        charts.weekday = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: weekdayData.map(d => d.name),
+                datasets: [{
+                    label: 'Errori',
+                    data: weekdayData.map(d => d.count),
+                    backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                    borderColor: 'rgba(102, 126, 234, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: { 
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)'
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { 
+                            color: '#fff'
+                        },
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        ticks: { 
+                            color: '#fff',
+                            stepSize: 1
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
                     }
                 }
-            },
-            scales: {
-                x: {
-                    ticks: { color: '#fff' }
-                },
-                y: {
-                    ticks: { color: '#fff' }
-                }
             }
-        }
-    });
+        });
+        
+        console.log('✅ Grafico weekday caricato');
+        
+    } catch (error) {
+        console.error('❌ Errore caricamento grafico weekday:', error);
+        ctx.parentElement.innerHTML = '<p style="text-align:center; color:#ff6b6b; padding:40px;">⚠️ Errore caricamento grafico</p>';
+    }
 }
 
 function loadComparisonChart() {
     const ctx = document.getElementById('comparisonChart');
-    if (charts.comparison) charts.comparison.destroy();
+    if (!ctx) {
+        console.warn('⚠️ Canvas comparisonChart non trovato');
+        return;
+    }
     
-    const comparison = compareWeekOverWeek();
+    if (charts.comparison) {
+        charts.comparison.destroy();
+    }
     
-    charts.comparison = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: people,
-            datasets: [
-                {
-                    label: 'Settimana Scorsa',
-                    data: people.map(p => comparison[p].previousWeek.penalty),
-                    backgroundColor: 'rgba(200, 200, 200, 0.7)'
+    try {
+        const comparison = compareWeekOverWeek();
+        
+        charts.comparison = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: people,
+                datasets: [
+                    {
+                        label: 'Settimana Scorsa',
+                        data: people.map(p => comparison[p].previousWeek.penalty),
+                        backgroundColor: 'rgba(200, 200, 200, 0.7)',
+                        borderColor: 'rgba(200, 200, 200, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Questa Settimana',
+                        data: people.map(p => comparison[p].currentWeek.penalty),
+                        backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: { 
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#fff',
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': -' + context.parsed.y + ' PP';
+                            }
+                        }
+                    }
                 },
-                {
-                    label: 'Questa Settimana',
-                    data: people.map(p => comparison[p].currentWeek.penalty),
-                    backgroundColor: 'rgba(102, 126, 234, 0.7)'
-                }
-            ]
-        },
-        options: { 
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    labels: {
-                        color: '#fff'
+                scales: {
+                    x: {
+                        ticks: { 
+                            color: '#fff'
+                        },
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        ticks: { 
+                            color: '#fff'
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
                     }
                 }
-            },
-            scales: {
-                x: {
-                    ticks: { color: '#fff' }
-                },
-                y: {
-                    ticks: { color: '#fff' }
-                }
             }
-        }
-    });
+        });
+        
+        console.log('✅ Grafico comparison caricato');
+        
+    } catch (error) {
+        console.error('❌ Errore caricamento grafico comparison:', error);
+        ctx.parentElement.innerHTML = '<p style="text-align:center; color:#ff6b6b; padding:40px;">⚠️ Errore caricamento grafico</p>';
+    }
 }
 
 function loadPredictions() {
