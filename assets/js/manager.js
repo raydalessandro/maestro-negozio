@@ -1070,3 +1070,181 @@ document.addEventListener('DOMContentLoaded', function() {
     setTodayDate();
     updateLeaderboard();
 });
+
+// ========================================
+// FEEDBACK SUPABASE INTEGRATION
+// ========================================
+// Aggiunto per visualizzare feedback da Supabase nel tab manager
+
+/**
+ * Carica feedback da Supabase per il manager
+ */
+async function loadManagerFeedbacks() {
+    console.log('📥 Caricamento feedback da Supabase per manager...');
+    
+    try {
+        const feedbacks = await loadFeedbacksFromSupabase(50);
+        displayFeedbacksManager(feedbacks);
+        displayFeedbackMoodStats(feedbacks);
+    } catch (error) {
+        console.error('❌ Errore caricamento feedback:', error);
+        document.getElementById('feedbackListManager').innerHTML = 
+            '<p style="text-align:center; color:#ff6b6b; padding:40px;">⚠️ Errore caricamento feedback</p>';
+    }
+}
+
+/**
+ * Visualizza lista feedback nel tab manager
+ */
+function displayFeedbacksManager(feedbacks) {
+    const container = document.getElementById('feedbackListManager');
+    if (!container) return;
+    
+    if (!feedbacks || feedbacks.length === 0) {
+        container.innerHTML = '<p style="text-align:center; opacity:0.6; padding: 40px;">Nessun feedback ancora. Il team può inviare feedback dalla sezione Team.</p>';
+        return;
+    }
+    
+    const moodEmoji = {
+        1: '😢',
+        2: '😟',
+        3: '😐',
+        4: '🙂',
+        5: '😄'
+    };
+    
+    const categoryNames = {
+        'team': 'Lavoro di squadra',
+        'workload': 'Carico di lavoro',
+        'tools': 'Strumenti e risorse',
+        'management': 'Gestione',
+        'other': 'Altro',
+        'generale': 'Generale'
+    };
+    
+    let html = '';
+    feedbacks.forEach(f => {
+        const date = new Date(f.created_at);
+        const dateStr = date.toLocaleDateString('it-IT', { 
+            day: '2-digit', 
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        html += `
+            <div style="border-bottom: 1px solid rgba(255,255,255,0.1); padding: 15px 0;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center;">
+                    <span style="font-size: 1.8em;">${moodEmoji[f.mood] || '😐'}</span>
+                    <span style="opacity: 0.6; font-size: 0.9em;">${dateStr}</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border-left: 3px solid #E60000;">
+                    <div style="font-weight: 600; color: #E60000; margin-bottom: 6px; font-size: 0.9em;">
+                        📂 ${categoryNames[f.category] || f.category}
+                    </div>
+                    <div style="line-height: 1.5;">
+                        ${f.message ? f.message : '<em style="opacity: 0.5;">Nessun messaggio scritto</em>'}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+/**
+ * Visualizza statistiche mood nel tab manager
+ */
+function displayFeedbackMoodStats(feedbacks) {
+    const container = document.getElementById('feedbackMoodStats');
+    if (!container) return;
+    
+    if (!feedbacks || feedbacks.length === 0) {
+        container.innerHTML = '<p style="opacity:0.6; text-align: center;">Nessun dato ancora</p>';
+        return;
+    }
+    
+    // Conta per mood
+    const moodCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    feedbacks.forEach(f => {
+        if (moodCounts.hasOwnProperty(f.mood)) {
+            moodCounts[f.mood]++;
+        }
+    });
+    
+    const total = feedbacks.length;
+    const moodLabels = {
+        1: '😢 Pessimo',
+        2: '😟 Male', 
+        3: '😐 OK',
+        4: '🙂 Bene',
+        5: '😄 Ottimo'
+    };
+    
+    let html = '<div style="display: flex; flex-direction: column; gap: 12px;">';
+    
+    // Ordine: dal migliore al peggiore
+    [5, 4, 3, 2, 1].forEach(mood => {
+        const count = moodCounts[mood];
+        const percentage = total > 0 ? ((count / total) * 100).toFixed(0) : 0;
+        
+        html += `
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="min-width: 110px; font-size: 1.1em;">${moodLabels[mood]}</div>
+                <div style="flex: 1; background: rgba(255,255,255,0.1); border-radius: 20px; height: 32px; overflow: hidden;">
+                    <div style="background: linear-gradient(90deg, #E60000, #B30000); 
+                                width: ${percentage}%; height: 100%; 
+                                display: flex; align-items: center; justify-content: flex-end; 
+                                padding-right: 12px; color: white; font-weight: 600; 
+                                border-radius: 20px; transition: width 0.3s ease;">
+                        ${count > 0 ? percentage + '%' : ''}
+                    </div>
+                </div>
+                <div style="min-width: 45px; text-align: right; font-weight: 600; font-size: 1.1em;">
+                    ${count}
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    
+    // Calcola mood medio
+    const avgMood = feedbacks.reduce((sum, f) => sum + f.mood, 0) / total;
+    const avgText = avgMood >= 4 ? '🎉 Ottimo morale!' : 
+                    avgMood >= 3 ? '👍 Morale buono' : 
+                    avgMood >= 2 ? '😐 Morale nella media' : 
+                    '⚠️ Attenzione al morale';
+    
+    html += `
+        <div style="margin-top: 20px; padding: 15px; background: rgba(230, 0, 0, 0.1); 
+                    border-radius: 10px; text-align: center; border: 2px solid rgba(230, 0, 0, 0.3);">
+            <div style="font-size: 1.3em; font-weight: 600;">${avgText}</div>
+            <div style="opacity: 0.8; margin-top: 5px;">Media: ${avgMood.toFixed(1)}/5</div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+/**
+ * ESTENDI switchTab esistente per caricare feedback
+ * Wrap della funzione originale
+ */
+(function() {
+    const originalSwitchTab = window.switchTab;
+    
+    window.switchTab = function(tabName) {
+        // Chiama funzione originale
+        originalSwitchTab(tabName);
+        
+        // Se tab feedbacks, carica dati
+        if (tabName === 'feedbacks') {
+            loadManagerFeedbacks();
+        }
+    };
+})();
+
+console.log('✅ Feedback Supabase integration caricata in manager.js');
