@@ -160,7 +160,7 @@ Ricorda: questo messaggio è completamente anonimo!"
             }
         }
 
-function submitFeedback() {
+async function submitFeedback() {
     if (!selectedMoodValue) {
         alert('❌ Seleziona come ti senti prima di inviare!');
         return;
@@ -168,13 +168,32 @@ function submitFeedback() {
 
     const message = document.getElementById('feedbackMessage').value.trim();
     const category = document.getElementById('feedbackCategory').value;
+    
+    // Disabilita bottone durante invio
+    const btn = document.getElementById('submitBtn');
+    const originalText = btn.textContent;
+    btn.textContent = '⏳ Invio in corso...';
+    btn.disabled = true;
 
-    // Salva feedback
-    saveFeedback(selectedMoodValue, message, category);
-
-    // Feedback visivo
-    alert('✅ Grazie per il tuo feedback!\n\nIl tuo messaggio anonimo è stato inviato al management.');
-
+    // Salva feedback (ora è async)
+    const success = await saveFeedback(selectedMoodValue, message, category);
+    
+    if (success) {
+        // Feedback visivo
+        alert('✅ Grazie per il tuo feedback!\n\nIl tuo messaggio anonimo è stato inviato al management.');
+        
+        // Reset form
+        document.getElementById('feedbackMessage').value = '';
+        document.querySelectorAll('.mood-option').forEach(opt => {
+            opt.classList.remove('selected');
+        });
+        selectedMoodValue = null;
+    }
+    
+    // Ripristina bottone
+    btn.textContent = originalText;
+    btn.disabled = false;
+}
             // Reset form
             selectedMoodValue = null;
             document.getElementById('feedbackMessage').value = '';
