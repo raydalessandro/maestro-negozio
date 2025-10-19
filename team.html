@@ -160,20 +160,20 @@ Ricorda: questo messaggio è completamente anonimo!"
             }
         }
 
-        function submitFeedback() {
-            if (!selectedMoodValue) {
-                alert('❌ Seleziona come ti senti prima di inviare!');
-                return;
-            }
+function submitFeedback() {
+    if (!selectedMoodValue) {
+        alert('❌ Seleziona come ti senti prima di inviare!');
+        return;
+    }
 
-            const message = document.getElementById('feedbackMessage').value.trim();
-            const category = document.getElementById('feedbackCategory').value;
+    const message = document.getElementById('feedbackMessage').value.trim();
+    const category = document.getElementById('feedbackCategory').value;
 
-            // Salva feedback
-            saveFeedback(selectedMoodValue, message, category);
+    // Salva feedback
+    saveFeedback(selectedMoodValue, message, category);
 
-            // Feedback visivo
-            alert('✅ Grazie per il tuo feedback!\n\nIl tuo messaggio anonimo è stato inviato al management.');
+    // Feedback visivo
+    alert('✅ Grazie per il tuo feedback!\n\nIl tuo messaggio anonimo è stato inviato al management.');
 
             // Reset form
             selectedMoodValue = null;
