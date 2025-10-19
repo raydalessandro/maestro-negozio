@@ -10,11 +10,20 @@
 }
 
 :root {
-    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    /* VODAFONE BRAND COLORS */
+    --vodafone-red: #E60000;
+    --vodafone-red-dark: #B30000;
+    --vodafone-black: #333333;
+    --vodafone-grey: #666666;
+    
+    /* GRADIENTS VODAFONE */
+    --primary-gradient: linear-gradient(135deg, #E60000 0%, #B30000 100%);
+    --secondary-gradient: linear-gradient(135deg, #333333 0%, #666666 100%);
     --gold-gradient: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
     --silver-gradient: linear-gradient(135deg, #C0C0C0 0%, #808080 100%);
     --bronze-gradient: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%);
+    
+    /* UI ELEMENTS */
     --glass-bg: rgba(255, 255, 255, 0.15);
     --glass-border: rgba(255, 255, 255, 0.2);
     --shadow: 0 8px 32px rgba(0,0,0,0.1);
@@ -22,7 +31,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #E60000 0%, #B30000 100%);
     min-height: 100vh;
     padding: 20px;
     color: #fff;
