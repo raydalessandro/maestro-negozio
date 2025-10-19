@@ -12,6 +12,11 @@ const SUPABASE_CONFIG = {
     key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwZm1reGl2ZmV4eGxkYWRyeGplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAwOTc1NTEsImV4cCI6MjA3NTY3MzU1MX0.FHNE6tThLByEvmAEFzVq5J-pfqQGg8SivOvZIAq9yko' // ← INCOLLA QUI anon public key
 };
 
+// Esporta globalmente per feedback.js e manager.js
+if (typeof window !== 'undefined') {
+    window.SUPABASE_CONFIG = SUPABASE_CONFIG;
+}
+
 // ========================================
 // SUPABASE CLIENT (semplice fetch, no librerie)
 // ========================================
