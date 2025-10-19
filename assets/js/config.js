@@ -27,9 +27,74 @@ const tasks = {
         { name: 'Call di formazione', points: 70 },
         { name: 'Recensioni', points: 70 }
     ],
+// PUNTI INIZIALI (600 base, max 730 con tutti i bonus KPI)
+const INITIAL_POINTS = 600;
+
+// TASK E PUNTEGGI (PENALITÀ)
+const tasks = {
+    'Routine Quotidiana': [
+        { name: 'Controllo e invio report giornaliero', points: 40 },
+        { name: 'Verifica apertura/chiusura', points: 40 }
+    ],
+    'Task Operativi': [
+        { name: 'Completamento corretto allestimenti vetrine', points: 70 },
+        { name: 'Gestione inventario/differenze inventariali', points: 70 },
+        { name: 'Chiusure fine mese', points: 70 },
+        { name: 'Gestione turnistica', points: 70 },
+        { name: 'Check Formazione', points: 70 },
+        { name: 'Gestione Mail ritardi/malattie/cambio turno', points: 70 },
+        { name: 'Gestione reclami', points: 70 },
+        { name: 'Call di formazione', points: 70 },
+        { name: 'Recensioni', points: 70 }
+    ],
     'Obiettivi a Risultato': [
-        { name: 'Raggiungimento KPI giornaliero', points: 10 }
+        { name: 'Raggiungimento KPI giornaliero', points: 50, canBeBonus: true, bonusPoints: 20 }
+        // ⚠️ SPECIALE: Se raggiunto = +20, se NON raggiunto = -50
+    ],
+    'Mystery Client': [
+        { name: 'Mystery Client fallito', points: 50 }
+        // ⚠️ Se passa = nessuna penalità, se fallisce = -50
     ]
+};
+
+// BONUS TASKS (azioni positive extra)
+const bonusTasks = [
+    { name: 'Cliente recuperato/fidelizzato', points: 40 },
+    { name: 'Upselling eccezionale', points: 35 },
+    { name: 'Formazione spontanea a collega', points: 25 }
+];
+
+// Funzione helper per task piatte
+function getTasksList() {
+    const allTasks = [];
+    Object.keys(tasks).forEach(category => {
+        tasks[category].forEach(task => {
+            allTasks.push({
+                category: category,
+                name: task.name,
+                points: task.points,
+                canBeBonus: task.canBeBonus || false,
+                bonusPoints: task.bonusPoints || 0,
+                type: 'penalty'
+            });
+        });
+    });
+    return allTasks;
+}
+
+// Funzione per lista bonus
+function getBonusTasksList() {
+    return bonusTasks.map(task => ({
+        name: task.name,
+        points: task.points,
+        type: 'bonus'
+    }));
+}
+
+// Funzione per task KPI (speciale)
+function getKPITask() {
+    return tasks['Obiettivi a Risultato'][0];
+}
 };
 
 // SISTEMA A LIVELLI
