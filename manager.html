@@ -52,6 +52,46 @@
 
             <div id="tasksList"></div>
 
+            <!-- SEZIONE KPI SPECIALE -->
+            <div id="kpiSection" style="display:none; margin-top: 30px; 
+                 background: linear-gradient(135deg, #E6F3FF, #CCE5FF); 
+                 border: 2px solid #0066CC; border-radius: 12px; padding: 20px;">
+                <h3 style="color: #0066CC; margin-bottom: 15px;">📊 KPI Giornaliero</h3>
+                <p style="opacity: 0.8; margin-bottom: 15px;">
+                    Questa persona ha raggiunto il KPI oggi?
+                </p>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <button id="kpiYes" class="btn btn-secondary" onclick="selectKPI(true)" 
+                            style="background: linear-gradient(135deg, #00C853, #00A040); flex: 1; min-width: 150px;">
+                        ✅ SI (+20 PP)
+                    </button>
+                    <button id="kpiNo" class="btn btn-secondary" onclick="selectKPI(false)" 
+                            style="background: linear-gradient(135deg, #D50000, #B30000); flex: 1; min-width: 150px;">
+                        ❌ NO (-50 PP)
+                    </button>
+                    <button id="kpiNone" class="btn btn-secondary" onclick="selectKPI(null)" 
+                            style="background: rgba(255,255,255,0.3); flex: 1; min-width: 150px;">
+                        ⊘ Non valutato
+                    </button>
+                </div>
+                <div id="kpiStatus" style="margin-top: 15px; text-align: center; font-weight: 600; font-size: 1.1em;">
+                    <!-- Stato KPI -->
+                </div>
+            </div>
+
+            <!-- SEZIONE BONUS TASKS -->
+            <div id="bonusSection" style="display:none; margin-top: 30px; 
+                 background: linear-gradient(135deg, #FFF9E6, #FFEDD5); 
+                 border: 2px solid #FFB800; border-radius: 12px; padding: 20px;">
+                <h3 style="color: #B38600; margin-bottom: 15px;">⭐ Bonus del Giorno</h3>
+                <p style="opacity: 0.8; margin-bottom: 15px;">
+                    Seleziona le azioni positive completate oggi:
+                </p>
+                <div id="bonusTasksList">
+                    <!-- Popolato da JS -->
+                </div>
+            </div>
+
             <div class="card">
                 <div class="penalty-summary" id="penaltySummary">
                     <h3>📊 Riepilogo Penalità</h3>
