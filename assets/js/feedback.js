@@ -15,24 +15,110 @@ const FEEDBACK_STORAGE_KEY = 'teamFeedback';
  * @param {string} message - Messaggio opzionale
  * @param {string} category - Categoria
  */
-function saveFeedback(mood, message = '', category = 'generale') {
-    const feedback = getFeedbackData();
-    
-    const newFeedback = {
-        id: Date.now(),
-        timestamp: new Date().toISOString(),
-        mood: mood,
-        message: message.trim(),
-        category: category,
-        read: false
-    };
-    
-    feedback.push(newFeedback);
-    
-    // Salva in localStorage
-    localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(feedback));
-    
-    console.log('✅ Feedback salvato:', newFeedback);
+// ========================================
+// SALVATAGGIO FEEDBACK CON SUPABASE
+// ========================================
+
+/**
+ * Salva feedback su Supabase + localStorage backup
+ */
+async function saveFeedback(mood, message = '', category = 'generale') {
+    try {
+        // Ottieni config Supabase (da supabase-storage.js)
+        const config = window.SUPABASE_CONFIG || SUPABASE_CONFIG;
+        
+        if (!config || !config.url) {
+            throw new Error('Supabase non configurato');
+        }
+        
+        console.log('📤 Invio feedback a Supabase...');
+        
+        // Salva su Supabase
+        const response = await fetch(`${config.url}/rest/v1/feedback_anonimi`, {
+            method: 'POST',
+            headers: {
+                'apikey': config.key,
+                'Authorization': `Bearer ${config.key}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({
+                mood: mood,
+                category: category,
+                message: message.trim(),
+                created_at: new Date().toISOString()
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.text();
+            throw new Error(`Supabase error: ${response.status} - ${error}`);
+        }
+        
+        console.log('✅ Feedback salvato su Supabase');
+        
+        // Backup locale (opzionale, per sicurezza)
+        const feedback = getFeedbackData();
+        feedback.push({
+            id: Date.now(),
+            timestamp: new Date().toISOString(),
+            mood: mood,
+            message: message.trim(),
+            category: category
+        });
+        localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(feedback));
+        console.log('✅ Backup locale salvato');
+        
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Errore salvataggio feedback:', error);
+        alert('❌ Errore invio feedback. Verifica connessione e riprova.');
+        return false;
+    }
+}
+
+/**
+ * NUOVA FUNZIONE: Carica feedback da Supabase (per manager)
+ */
+async function loadFeedbacksFromSupabase(limit = 50) {
+    try {
+        const config = window.SUPABASE_CONFIG || SUPABASE_CONFIG;
+        
+        if (!config || !config.url) {
+            throw new Error('Supabase non configurato');
+        }
+        
+        console.log('📥 Caricamento feedback da Supabase...');
+        
+        const response = await fetch(
+            `${config.url}/rest/v1/feedback_anonimi?select=*&order=created_at.desc&limit=${limit}`,
+            {
+                headers: {
+                    'apikey': config.key,
+                    'Authorization': `Bearer ${config.key}`
+                }
+            }
+        );
+        
+        if (!response.ok) {
+            throw new Error(`Errore caricamento: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log(`✅ Caricati ${data.length} feedback da Supabase`);
+        return data;
+        
+    } catch (error) {
+        console.error('❌ Errore caricamento feedback:', error);
+        return [];
+    }
+}
+
+// Export funzioni globalmente
+if (typeof window !== 'undefined') {
+    window.saveFeedback = saveFeedback;
+    window.loadFeedbacksFromSupabase = loadFeedbacksFromSupabase;
 }
 
 /**
@@ -264,3 +350,4 @@ if (typeof window !== 'undefined') {
 }
 
 console.log('✅ Feedback system caricato');
+console.log('✅ Feedback system con Supabase caricato');
