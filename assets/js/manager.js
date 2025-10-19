@@ -289,6 +289,10 @@ async function saveTasksForToday() {
     }
 
     const date = document.getElementById('taskDate').value;
+    
+    // ========================================
+    // 1. CALCOLA PENALITÀ (task NON completate)
+    // ========================================
     const checkboxes = document.querySelectorAll('#tasksList input[type="checkbox"]:checked');
     let totalPenalty = 0;
     const incompleteTasks = [];
@@ -298,35 +302,94 @@ async function saveTasksForToday() {
         incompleteTasks.push(cb.dataset.task);
     });
 
+    // ========================================
+    // 2. CALCOLA KPI (può essere +20 o -50)
+    // ========================================
+    let kpiPoints = 0;
+    let kpiStatus = null;
+    
+    if (window.selectedKPI !== undefined && window.selectedKPI !== null) {
+        kpiStatus = window.selectedKPI;
+        kpiPoints = window.selectedKPI ? 20 : -50; // true = +20, false = -50
+    }
+
+    // ========================================
+    // 3. CALCOLA BONUS (azioni positive)
+    // ========================================
+    let totalBonus = 0;
+    const completedBonus = [];
+    const bonusCheckboxes = document.querySelectorAll('#bonusTasksList input[type="checkbox"]:checked');
+    
+    bonusCheckboxes.forEach(cb => {
+        totalBonus += parseInt(cb.dataset.points);
+        completedBonus.push(cb.dataset.task);
+    });
+
+    // ========================================
+    // 4. SALVA SU DATABASE
+    // ========================================
     const data = getData();
     
     // Rimuovi record precedente per questa data
     data[selectedPerson].history = data[selectedPerson].history.filter(h => h.date !== date);
     
-    // Aggiungi nuovo record se c'è penalità
-    if (totalPenalty > 0) {
-        data[selectedPerson].history.push({
-            date: date,
-            penalty: totalPenalty,
-            incompleteTasks: incompleteTasks
-        });
-    }
+    // Aggiungi nuovo record (anche se tutto a 0, per tracciare la valutazione)
+    data[selectedPerson].history.push({
+        date: date,
+        penalty: totalPenalty,
+        bonus: totalBonus,
+        kpi: kpiPoints,
+        kpiStatus: kpiStatus, // true/false/null
+        incompleteTasks: incompleteTasks,
+        bonusTasks: completedBonus
+    });
 
-    // Ricalcola punti totali
-    data[selectedPerson].points = 500 - data[selectedPerson].history.reduce((sum, h) => sum + h.penalty, 0);
+    // ========================================
+    // 5. RICALCOLA PUNTI TOTALI
+    // Formula: 600 - penalità + bonus + kpi
+    // ========================================
+    const totalPenaltySum = data[selectedPerson].history.reduce((sum, h) => sum + (h.penalty || 0), 0);
+    const totalBonusSum = data[selectedPerson].history.reduce((sum, h) => sum + (h.bonus || 0), 0);
+    const totalKpiSum = data[selectedPerson].history.reduce((sum, h) => sum + (h.kpi || 0), 0);
     
-    // Salva (con await per GitHub)
+    data[selectedPerson].points = 600 - totalPenaltySum + totalBonusSum + totalKpiSum;
+    
+    // ========================================
+    // 6. SALVA (con Supabase sync)
+    // ========================================
     const success = await saveData(data);
     
-    if (success) {
-        alert(`✅ Salvato su GitHub!\n\nPersona: ${selectedPerson}\nData: ${date}\nPenalità: -${totalPenalty} PP\nPunti attuali: ${data[selectedPerson].points} PP`);
-    } else {
-        alert(`⚠️ Salvato SOLO in locale!\n\nPersona: ${selectedPerson}\nData: ${date}\nPenalità: -${totalPenalty} PP\nPunti attuali: ${data[selectedPerson].points} PP\n\n❌ GitHub NON disponibile - verifica connessione!`);
+    // ========================================
+    // 7. MESSAGGIO RISULTATO
+    // ========================================
+    let message = `✅ Salvato!\n\nPersona: ${selectedPerson}\nData: ${date}\n\n`;
+    
+    if (totalPenalty > 0) message += `❌ Penalità: -${totalPenalty} PP\n`;
+    if (totalBonus > 0) message += `⭐ Bonus: +${totalBonus} PP\n`;
+    if (kpiPoints !== 0) {
+        message += kpiPoints > 0 
+            ? `✅ KPI Raggiunto: +${kpiPoints} PP\n` 
+            : `❌ KPI NON Raggiunto: ${kpiPoints} PP\n`;
     }
     
+    message += `\n📊 Punti finali: ${data[selectedPerson].points} PP`;
+    
+    if (!success) {
+        message += '\n\n⚠️ Salvato solo in locale (Supabase offline)';
+    }
+    
+    alert(message);
+    
     updatePenaltySummary();
+    
+    // Reset selezione KPI
+    window.selectedKPI = null;
+    document.querySelectorAll('#kpiSection button').forEach(btn => {
+        btn.style.opacity = '0.7';
+        btn.style.transform = 'scale(1)';
+    });
+    document.getElementById('kpiStatus').innerHTML = '';
 }
-
 // ========================================
 // STORICO
 // ========================================
@@ -1248,3 +1311,185 @@ function displayFeedbackMoodStats(feedbacks) {
 })();
 
 console.log('✅ Feedback Supabase integration caricata in manager.js');
+
+// ========================================
+// GESTIONE BONUS E KPI
+// ========================================
+
+// Variabile globale per tracciare selezione KPI
+window.selectedKPI = null;
+
+/**
+ * Gestione selezione KPI
+ */
+function selectKPI(value) {
+    window.selectedKPI = value;
+    
+    // Reset stili tutti i bottoni
+    document.querySelectorAll('#kpiSection button').forEach(btn => {
+        btn.style.opacity = '0.7';
+        btn.style.transform = 'scale(1)';
+    });
+    
+    // Evidenzia bottone selezionato
+    let selectedBtn;
+    if (value === true) {
+        selectedBtn = document.getElementById('kpiYes');
+    } else if (value === false) {
+        selectedBtn = document.getElementById('kpiNo');
+    } else {
+        selectedBtn = document.getElementById('kpiNone');
+    }
+    
+    if (selectedBtn) {
+        selectedBtn.style.opacity = '1';
+        selectedBtn.style.transform = 'scale(1.05)';
+    }
+    
+    // Aggiorna status
+    const statusDiv = document.getElementById('kpiStatus');
+    if (value === true) {
+        statusDiv.innerHTML = '<span style="color: #00C853;">✅ KPI Raggiunto (+20 PP)</span>';
+    } else if (value === false) {
+        statusDiv.innerHTML = '<span style="color: #D50000;">❌ KPI NON Raggiunto (-50 PP)</span>';
+    } else {
+        statusDiv.innerHTML = '<span style="opacity: 0.6;">⊘ Nessuna valutazione KPI</span>';
+    }
+    
+    updatePenaltySummary();
+}
+
+/**
+ * Renderizza lista bonus tasks
+ */
+function renderBonusTasks() {
+    const bonusList = getBonusTasksList();
+    const container = document.getElementById('bonusTasksList');
+    
+    if (!container) return;
+    
+    let html = '';
+    bonusList.forEach((task, index) => {
+        html += `
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                <input type="checkbox" 
+                       id="bonus-${index}" 
+                       class="bonus-checkbox"
+                       data-points="${task.points}"
+                       data-task="${task.name}"
+                       onchange="updatePenaltySummary()"
+                       style="width: 20px; height: 20px; accent-color: #FFB800; cursor: pointer;">
+                <label for="bonus-${index}" style="flex: 1; cursor: pointer; font-size: 1em;">
+                    ${task.name} 
+                    <span style="color: #FFB800; font-weight: 600;">(+${task.points} PP)</span>
+                </label>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+/**
+ * Mostra sezioni bonus/KPI quando si seleziona persona
+ * MODIFICA della funzione selectPerson esistente
+ */
+(function() {
+    const originalSelectPerson = window.selectPerson;
+    
+    window.selectPerson = function(person) {
+        originalSelectPerson(person);
+        
+        // Mostra sezioni
+        const bonusSection = document.getElementById('bonusSection');
+        const kpiSection = document.getElementById('kpiSection');
+        
+        if (bonusSection) {
+            bonusSection.style.display = 'block';
+            renderBonusTasks();
+        }
+        
+        if (kpiSection) {
+            kpiSection.style.display = 'block';
+        }
+        
+        // Reset selezione KPI
+        window.selectedKPI = null;
+        document.getElementById('kpiStatus').innerHTML = '';
+    };
+})();
+
+/**
+ * ESTENDI updatePenaltySummary per includere bonus e KPI
+ */
+(function() {
+    const originalUpdateSummary = window.updatePenaltySummary;
+    
+    window.updatePenaltySummary = function() {
+        const checkboxes = document.querySelectorAll('#tasksList input[type="checkbox"]:checked');
+        let totalPenalty = 0;
+        let taskCount = checkboxes.length;
+
+        checkboxes.forEach(cb => {
+            totalPenalty += parseInt(cb.dataset.points);
+        });
+
+        // Calcola bonus
+        let totalBonus = 0;
+        const bonusCheckboxes = document.querySelectorAll('#bonusTasksList input[type="checkbox"]:checked');
+        bonusCheckboxes.forEach(cb => {
+            totalBonus += parseInt(cb.dataset.points);
+        });
+
+        // KPI
+        let kpiPoints = 0;
+        if (window.selectedKPI === true) kpiPoints = 20;
+        if (window.selectedKPI === false) kpiPoints = -50;
+
+        const summaryDiv = document.getElementById('penaltySummary');
+        
+        if (taskCount === 0 && totalBonus === 0 && kpiPoints === 0) {
+            summaryDiv.innerHTML = `
+                <h3>✅ Nessuna modifica</h3>
+                <p>Nessuna penalità, bonus o KPI selezionato</p>
+            `;
+        } else {
+            const data = getData();
+            const currentPoints = data[selectedPerson].points;
+            
+            // Calcola punti vecchi (prima di questa modifica)
+            const date = document.getElementById('taskDate').value;
+            const oldRecord = data[selectedPerson].history.find(h => h.date === date);
+            const oldPenalty = oldRecord ? oldRecord.penalty : 0;
+            const oldBonus = oldRecord ? (oldRecord.bonus || 0) : 0;
+            const oldKpi = oldRecord ? (oldRecord.kpi || 0) : 0;
+            
+            // Calcola nuovi punti
+            const netChange = -totalPenalty + totalBonus + kpiPoints - (-oldPenalty + oldBonus + oldKpi);
+            const newPoints = currentPoints + netChange;
+            
+            let html = '<h3>📊 Riepilogo</h3>';
+            
+            if (taskCount > 0) {
+                html += `<p>❌ <strong>${taskCount}</strong> task non completate: <span style="color:#ff6b6b; font-weight:600;">-${totalPenalty} PP</span></p>`;
+            }
+            
+            if (totalBonus > 0) {
+                html += `<p>⭐ Bonus: <span style="color:#FFB800; font-weight:600;">+${totalBonus} PP</span></p>`;
+            }
+            
+            if (kpiPoints !== 0) {
+                const kpiColor = kpiPoints > 0 ? '#00C853' : '#D50000';
+                const kpiSign = kpiPoints > 0 ? '+' : '';
+                html += `<p>📊 KPI: <span style="color:${kpiColor}; font-weight:600;">${kpiSign}${kpiPoints} PP</span></p>`;
+            }
+            
+            html += `<hr style="margin: 15px 0; opacity: 0.3;">`;
+            html += `<p style="font-size:1.3em;">Punti dopo salvataggio: <strong>${newPoints} PP</strong></p>`;
+            
+            summaryDiv.innerHTML = html;
+        }
+    };
+})();
+
+console.log('✅ Sistema Bonus e KPI caricato');
