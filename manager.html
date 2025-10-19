@@ -186,6 +186,37 @@
         </div>
     </div>
 
+    <!-- TAB FEEDBACK TEAM -->
+        <div id="tab-feedbacks" class="tab-content">
+            <div class="card">
+                <h2>💬 Feedback Anonimi del Team</h2>
+                <p style="opacity: 0.8; margin-bottom: 20px;">
+                    Messaggi anonimi inviati dal team per migliorare l'ambiente di lavoro
+                </p>
+                
+                <!-- Statistiche Mood -->
+                <div style="margin-bottom: 30px;">
+                    <h3>📊 Umore del Team</h3>
+                    <div id="feedbackMoodStats" style="margin-top: 15px;">
+                        <!-- Popolato da JS -->
+                    </div>
+                </div>
+                
+                <!-- Lista Feedback -->
+                <div style="margin-top: 30px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3>💬 Ultimi 50 Feedback</h3>
+                        <button class="btn btn-secondary" onclick="loadManagerFeedbacks()">
+                            🔄 Ricarica
+                        </button>
+                    </div>
+                    <div id="feedbackListManager" style="max-height: 600px; overflow-y: auto; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 15px;">
+                        <p style="text-align: center; opacity: 0.6;">Caricamento...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     <!-- Script nell'ordine corretto -->
     <script src="assets/js/config.js"></script>
     <script src="assets/js/supabase-storage.js"></script>
