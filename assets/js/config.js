@@ -7,7 +7,7 @@
 const people = ['Gemy', 'Valeria', 'Riky'];
 
 // PUNTI INIZIALI
-const INITIAL_POINTS = 500;
+const INITIAL_POINTS = 600;
 
 // TASK E PUNTEGGI
 // Struttura: { 'Categoria': [ { name: 'Nome Task', points: Penalità } ] }
