@@ -148,115 +148,138 @@ Ricorda: questo messaggio è completamente anonimo!"
         function selectMood(mood) {
             selectedMoodValue = mood;
             
-            // Rimuovi selezione precedente
             document.querySelectorAll('.mood-option').forEach(opt => {
                 opt.classList.remove('selected');
             });
             
-            // Aggiungi selezione corrente
             const selected = document.querySelector(`.mood-option[data-mood="${mood}"]`);
             if (selected) {
                 selected.classList.add('selected');
             }
         }
 
-async function submitFeedback() {
-    if (!selectedMoodValue) {
-        alert('❌ Seleziona come ti senti prima di inviare!');
-        return;
-    }
-
-    const message = document.getElementById('feedbackMessage').value.trim();
-    const category = document.getElementById('feedbackCategory').value;
-    
-    // Disabilita bottone durante invio
-    const btn = document.getElementById('submitBtn');
-    const originalText = btn.textContent;
-    btn.textContent = '⏳ Invio in corso...';
-    btn.disabled = true;
-
-    // Salva feedback (ora è async)
-    const success = await saveFeedback(selectedMoodValue, message, category);
-    
-    if (success) {
-        // Feedback visivo
-        alert('✅ Grazie per il tuo feedback!\n\nIl tuo messaggio anonimo è stato inviato al management.');
-        
-        // Reset form
-        document.getElementById('feedbackMessage').value = '';
-        document.querySelectorAll('.mood-option').forEach(opt => {
-            opt.classList.remove('selected');
-        });
-        selectedMoodValue = null;
-    }
-    
-    // Ripristina bottone
-    btn.textContent = originalText;
-    btn.disabled = false;
-}
-            // Reset form
-            selectedMoodValue = null;
-            document.getElementById('feedbackMessage').value = '';
-            document.getElementById('feedbackCategory').value = 'generale';
-            document.querySelectorAll('.mood-option').forEach(opt => {
-                opt.classList.remove('selected');
-            });
-
-            // Aggiorna display
-            updateTeamMoodDisplay();
-        }
-
-        function updateTeamMoodDisplay() {
-            const weekMood = getCurrentWeekMood();
-            const monthMood = getCurrentMonthMood();
-            const stats = getFeedbackStats();
-
-            let html = '<div style="text-align: center; padding: 20px;">';
-
-            if (!weekMood && !monthMood) {
-                html += '<p style="opacity: 0.7;">📊 Nessun feedback ancora questa settimana.<br>Sii il primo a condividere come ti senti!</p>';
-            } else {
-                if (weekMood) {
-                    const color = moodToColor(weekMood);
-                    html += `
-                        <div style="margin-bottom: 20px;">
-                            <div style="font-size: 3em;">${moodToEmoji(Math.round(weekMood))}</div>
-                            <div style="font-size: 2em; font-weight: bold; color: ${color};">${weekMood}/5</div>
-                            <div style="opacity: 0.8;">Media Questa Settimana</div>
-                            <div style="font-size: 0.9em; opacity: 0.6; margin-top: 5px;">${stats.thisWeek} feedback ricevuti</div>
-                        </div>
-                    `;
-                }
-
-                if (monthMood) {
-                    const color = moodToColor(monthMood);
-                    html += `
-                        <div style="padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.2);">
-                            <div style="font-size: 1.5em; font-weight: bold; color: ${color};">${monthMood}/5</div>
-                            <div style="opacity: 0.8;">Media Questo Mese</div>
-                            <div style="font-size: 0.9em; opacity: 0.6; margin-top: 5px;">${stats.thisMonth} feedback totali</div>
-                        </div>
-                    `;
-                }
+        async function submitFeedback() {
+            if (!selectedMoodValue) {
+                alert('❌ Seleziona come ti senti prima di inviare!');
+                return;
             }
 
-            html += '</div>';
-            document.getElementById('teamMoodDisplay').innerHTML = html;
+            const message = document.getElementById('feedbackMessage').value.trim();
+            const category = document.getElementById('feedbackCategory').value;
+            
+            const btn = document.getElementById('submitBtn');
+            const originalText = btn.textContent;
+            btn.textContent = '⏳ Invio in corso...';
+            btn.disabled = true;
+
+            const success = await saveFeedback(selectedMoodValue, message, category);
+            
+            if (success) {
+                alert('✅ Grazie per il tuo feedback!\n\nIl tuo messaggio anonimo è stato inviato al management.');
+                
+                document.getElementById('feedbackMessage').value = '';
+                document.getElementById('feedbackCategory').value = 'generale';
+                document.querySelectorAll('.mood-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                selectedMoodValue = null;
+                
+                updateTeamMoodDisplay();
+            }
+            
+            btn.textContent = originalText;
+            btn.disabled = false;
         }
 
-        // Aspetta che il DOM sia caricato
+        async function updateTeamMoodDisplay() {
+            const stats = await getTeamMoodStats();
+            const container = document.getElementById('teamMoodDisplay');
+            
+            if (!container) return;
+            
+            const total = Object.values(stats).reduce((a, b) => a + b, 0);
+            
+            if (total === 0) {
+                container.innerHTML = '<p style="text-align: center; opacity: 0.6;">Nessun feedback ancora. Sii il primo! 🚀</p>';
+                return;
+            }
+            
+            const moodEmojis = { 1: '😢', 2: '😟', 3: '😐', 4: '🙂', 5: '😄' };
+            
+            let html = '<div style="display: flex; justify-content: space-around; margin: 20px 0;">';
+            
+            Object.keys(stats).forEach(mood => {
+                const count = stats[mood];
+                const percentage = ((count / total) * 100).toFixed(0);
+                
+                html += `
+                    <div style="text-align: center;">
+                        <div style="font-size: 2em; margin-bottom: 5px;">${moodEmojis[mood]}</div>
+                        <div style="font-size: 1.2em; font-weight: 600; color: #E60000;">${percentage}%</div>
+                        <div style="font-size: 0.8em; opacity: 0.6;">${count} voti</div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            
+            const avgMood = Object.keys(stats).reduce((sum, mood) => {
+                return sum + (parseInt(mood) * stats[mood]);
+            }, 0) / total;
+            
+            let moodText = '';
+            if (avgMood >= 4.5) moodText = '🎉 Il team è super motivato!';
+            else if (avgMood >= 3.5) moodText = '👍 Il morale è buono';
+            else if (avgMood >= 2.5) moodText = '😐 Il team è nella media';
+            else moodText = '⚠️ Il team ha bisogno di supporto';
+            
+            html += `<div style="text-align: center; font-size: 1.1em; font-weight: 600; color: #333; margin-top: 15px;">${moodText}</div>`;
+            
+            container.innerHTML = html;
+        }
+
+        async function getTeamMoodStats() {
+            try {
+                const config = window.SUPABASE_CONFIG;
+                if (!config) return { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+                
+                const response = await fetch(
+                    `${config.url}/rest/v1/feedback_anonimi?select=mood`,
+                    {
+                        headers: {
+                            'apikey': config.key,
+                            'Authorization': `Bearer ${config.key}`
+                        }
+                    }
+                );
+                
+                if (!response.ok) throw new Error('Errore caricamento');
+                
+                const data = await response.json();
+                const moodCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+                data.forEach(f => {
+                    if (moodCounts.hasOwnProperty(f.mood)) {
+                        moodCounts[f.mood]++;
+                    }
+                });
+                
+                return moodCounts;
+            } catch (error) {
+                console.error('❌ Errore stats mood:', error);
+                return { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
-            // Aggiorna classifica all'avvio
-           // Inizializza Supabase sync
-if (window.supabaseSync && window.supabaseSync.init) {
-    window.supabaseSync.init().then(() => {
-        console.log('✅ Supabase sync team attiva');
-    });
-}
+            if (window.supabaseSync && window.supabaseSync.init) {
+                window.supabaseSync.init().then(() => {
+                    console.log('✅ Supabase sync team attiva');
+                });
+            }
+            
             updateLeaderboard();
             updateTeamMoodDisplay();
 
-            // Auto-refresh classifica ogni 30 secondi
             setInterval(function() {
                 if (document.getElementById('team-leaderboard').classList.contains('active')) {
                     updateLeaderboard();
